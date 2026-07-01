@@ -1,8 +1,27 @@
 /* app/globals.css */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@import "tailwindcss";
+
+/*
+ * Tailwind v4 defaults the `border` utility color to `currentColor`.
+ * Restore the v3 behavior (light gray) so components using bare
+ * `border` render soft borders instead of dark ones.
+ *
+ * The reset also lives in @layer base so Tailwind's padding/margin
+ * utilities (which live in @layer utilities) can override it. An
+ * unlayered reset would beat every utility and strip all padding.
+ */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: #e5e7eb;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 }
 
 body {
@@ -194,6 +213,22 @@ body {
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+
+
+.analyticsLayout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 24px;
+  align-items: start;
+  margin-top: 24px;
+}
+
+@media (max-width: 992px) {
+  .analyticsLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
 
 @keyframes spin {
   to { transform: rotate(360deg); }

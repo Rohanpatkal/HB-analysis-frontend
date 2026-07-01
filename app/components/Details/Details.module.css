@@ -1,0 +1,167 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.panel {
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 28px;
+  border: 1px solid #edf2f7;
+  box-shadow: 0 12px 35px rgba(15, 23, 42, 0.06);
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.panelHead h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.panelHead p {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.up {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.down {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.flat {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.tile {
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+  border-radius: 18px;
+  padding: 18px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tile:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.07);
+}
+
+.tileLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tileValue {
+  margin-top: 10px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.tileSub {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+/* Mini month bar chart */
+
+.chart {
+  margin-top: 24px;
+}
+
+.chartTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+.bars {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 6px;
+  align-items: end;
+  height: 120px;
+}
+
+.barCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.bar {
+  width: 100%;
+  border-radius: 8px 8px 4px 4px;
+  background: linear-gradient(180deg, #34d399, #059669);
+  min-height: 4px;
+  transition: height 0.4s ease;
+}
+
+.barLabel {
+  font-size: 0.62rem;
+  color: #94a3b8;
+}
+
+@media (max-width: 600px) {
+  .panel {
+    padding: 20px;
+  }
+
+  .bars {
+    height: 90px;
+  }
+
+  .barLabel {
+    font-size: 0.5rem;
+  }
+}
