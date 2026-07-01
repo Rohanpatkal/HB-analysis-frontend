@@ -162,6 +162,26 @@ export function getPeriodData(month, year, raw = null) {
     calendar[isoFor(year, month, day)] = statuses[day - 1];
   }
 
+  // Per-day counts shown on each calendar cell. Deterministic per period.
+  // `count`  = smoking events that day, `hbCount` = HB events that day.
+  const countRng = makeRng((year * 12 + month + 1) * 7 + 3);
+  const dayCounts = {};
+  for (let day = 1; day <= daysInMonth; day++) {
+    const status = statuses[day - 1];
+    let count = 0;
+    let hbCount = 0;
+
+    if (status === "red") {
+      count = 3 + Math.floor(countRng() * 12); // 3..14
+      hbCount = 1 + Math.floor(countRng() * 4); // 1..4
+    } else if (status === "yellow") {
+      count = 1 + Math.floor(countRng() * 3); // 1..3
+      hbCount = Math.floor(countRng() * 2); // 0..1
+    }
+
+    dayCounts[isoFor(year, month, day)] = { count, hbCount };
+  }
+
   // Analyse the statuses.
   const {
     smokeFreeDays,
@@ -198,6 +218,7 @@ export function getPeriodData(month, year, raw = null) {
 
     // For ContributionCalendar
     calendar,
+    dayCounts,
 
     // For MonthSummary
     summary: [
