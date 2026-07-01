@@ -1,4 +1,3 @@
-// app/page.jsx
 "use client";
 
 import { DashboardProvider } from "./context/DashboardProvider";
@@ -7,12 +6,11 @@ import ContributionCalendar from "./components/ContributionCalendar";
 import MonthSummary from "./components/summuryDetails/MonthSummury";
 import Details from "./components/Details/Details";
 import RecoveryHighlights from "./components/RecoveryHighlights/RecoveryHighlights";
+import { fetchAnalyticsData } from "../lib/api-client";
 
 export default function Home() {
-  // To use a real backend, pass a fetcher:
-  // <DashboardProvider fetcher={(month, year) => fetchMonth(month, year)}>
   return (
-    <DashboardProvider>
+    <DashboardProvider fetcher={() => fetchAnalyticsData()}>
       <main className="min-h-screen py-6 px-4 sm:py-10 sm:px-6 lg:px-10">
         <div className="mx-auto flex w-full flex-col gap-6 sm:gap-8">
           <RecoveryHighlights />

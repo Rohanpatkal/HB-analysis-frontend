@@ -94,6 +94,93 @@ function statusesFromCalendar(map, month, year, daysInMonth) {
   return statuses;
 }
 
+function isAnalyticsPayload(raw) {
+  return raw && typeof raw === "object" && raw.data && typeof raw.data === "object";
+}
+
+function getAnalyticsMonthData(raw, month, year) {
+  if (!isAnalyticsPayload(raw)) return null;
+
+  const yearKey = String(year);
+  const monthKey = `${String(month + 1).padStart(2, "0")}-${yearKey}`;
+  const monthRows = raw.data?.[yearKey]?.[monthKey] ?? [];
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const calendar = {};
+  const dayCounts = {};
+
+  // Store count for every day (default 0).
+  const counts = {};
+  for (let day = 1; day <= daysInMonth; day++) {
+    counts[day] = 0;
+  }
+
+  for (const item of monthRows) {
+    const day = Number(item.day);
+    const count = Number(item.count) || 0;
+
+    if (!Number.isInteger(day) || day < 1 || day > daysInMonth) continue;
+
+    counts[day] = count;
+    const iso = isoFor(year, month, day);
+    dayCounts[iso] = {
+      count,
+      hbCount: Number(item.hbCount) || 0,
+    };
+  }
+
+  // Fill missing dayCounts.
+  for (let day = 1; day <= daysInMonth; day++) {
+    const iso = isoFor(year, month, day);
+    if (!dayCounts[iso]) {
+      dayCounts[iso] = {
+        count: 0,
+        hbCount: 0,
+      };
+    }
+  }
+
+  const prevMonth = month === 0 ? 11 : month - 1;
+  const prevYear = month === 0 ? year - 1 : year;
+  const prevYearKey = String(prevYear);
+  const prevMonthKey = `${String(prevMonth + 1).padStart(2, "0")}-${prevYearKey}`;
+  const prevMonthRows = raw.data?.[prevYearKey]?.[prevMonthKey] ?? [];
+  const prevDaysInMonth = new Date(prevYear, prevMonth + 1, 0).getDate();
+
+  let carryYellowDays = 0;
+  if (Array.isArray(prevMonthRows) && prevMonthRows.length > 0) {
+    let lastRedDay = 0;
+    for (const item of prevMonthRows) {
+      const day = Number(item.day);
+      const count = Number(item.count) || 0;
+      if (Number.isInteger(day) && day >= 1 && day <= prevDaysInMonth && count > 0) {
+        lastRedDay = Math.max(lastRedDay, day);
+      }
+    }
+    if (lastRedDay > 0) {
+      carryYellowDays = Math.max(0, AFFECTED_DAYS - (prevDaysInMonth - lastRedDay));
+    }
+  }
+
+  // Build calendar.
+  let yellowUntil = carryYellowDays;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const iso = isoFor(year, month, day);
+    if (counts[day] > 0) {
+      calendar[iso] = "red";
+      yellowUntil = day + AFFECTED_DAYS;
+    } else if (day <= yellowUntil) {
+      calendar[iso] = "yellow";
+    } else {
+      calendar[iso] = "green";
+    }
+  }
+
+  return {
+    calendar,
+    dayCounts,
+  };
+}
 // Return the lengths of every run of consecutive smoke-free (green) days.
 function smokeFreeRuns(statuses) {
   const runs = [];
@@ -149,8 +236,8 @@ function analyze(statuses, daysInMonth) {
 // { "YYYY-MM-DD": status } map. When omitted, data is generated locally.
 export function getPeriodData(month, year, raw = null) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const calendarInput = raw?.calendar ?? raw ?? null;
+  const analyticsMonthData = getAnalyticsMonthData(raw, month, year);
+  const calendarInput = raw?.calendar ?? analyticsMonthData?.calendar ?? raw ?? null;
 
   const statuses = calendarInput
     ? statusesFromCalendar(calendarInput, month, year, daysInMonth)
@@ -162,11 +249,17 @@ export function getPeriodData(month, year, raw = null) {
     calendar[isoFor(year, month, day)] = statuses[day - 1];
   }
 
-  // Per-day counts shown on each calendar cell. Deterministic per period.
-  // `count`  = smoking events that day, `hbCount` = HB events that day.
+  const countsFromAnalytics = analyticsMonthData?.dayCounts;
   const countRng = makeRng((year * 12 + month + 1) * 7 + 3);
   const dayCounts = {};
+
   for (let day = 1; day <= daysInMonth; day++) {
+    const iso = isoFor(year, month, day);
+    if (countsFromAnalytics?.[iso]) {
+      dayCounts[iso] = countsFromAnalytics[iso];
+      continue;
+    }
+
     const status = statuses[day - 1];
     let count = 0;
     let hbCount = 0;
@@ -179,7 +272,7 @@ export function getPeriodData(month, year, raw = null) {
       hbCount = Math.floor(countRng() * 2); // 0..1
     }
 
-    dayCounts[isoFor(year, month, day)] = { count, hbCount };
+    dayCounts[iso] = { count, hbCount };
   }
 
   // Analyse the statuses.
@@ -194,6 +287,11 @@ export function getPeriodData(month, year, raw = null) {
     recoveryScore,
     longestStreak,
   } = analyze(statuses, daysInMonth);
+
+  const totalCount = Object.values(dayCounts).reduce(
+    (sum, day) => sum + (Number(day.count) || 0),
+    0
+  );
 
   // Improvement vs the previous month (generated baseline).
   const prevM = month === 0 ? 11 : month - 1;
@@ -225,7 +323,9 @@ export function getPeriodData(month, year, raw = null) {
       { title: "Current Streak", value: `${currentStreak} Days`, icon: "🔥", color: "#22c55e" },
       { title: "Longest Streak", value: `${longestStreak} Days`, icon: "🏆", color: "#f59e0b" },
       { title: "Smoke-Free Days", value: `${smokeFreeDays}`, icon: "🚭", color: "#2563eb" },
+      { title: "Reduced Days", value: `${reducedDays}`, icon: "🟡", color: "#fbbf24" },
       { title: "Smoking Days", value: `${smokingDays}`, icon: "🚬", color: "#ef4444" },
+      { title: "Total Count", value: `${totalCount}`, icon: "📊", color: "#0ea5e9" },
       { title: "Money Saved", value: inr(moneySaved), icon: "💰", color: "#10b981" },
       { title: "Recovery Score", value: `${recoveryScore}%`, icon: "❤️", color: "#ec4899" },
     ],

@@ -6,28 +6,28 @@ import { useDashboard } from "../context/DashboardProvider";
 
 const statusStyles = {
   green: {
-    cell: "bg-emerald-50 border-emerald-200 hover:border-emerald-300",
-    day: "text-emerald-700",
-    dot: "bg-emerald-500",
-    chip: "bg-emerald-100 text-emerald-700",
+    cell: "bg-emerald-200 border-emerald-400 hover:border-emerald-500",
+    day: "text-emerald-950",
+    dot: "bg-emerald-700",
+    chip: "bg-emerald-300 text-emerald-950",
   },
   yellow: {
-    cell: "bg-amber-50 border-amber-200 hover:border-amber-300",
-    day: "text-amber-700",
-    dot: "bg-amber-500",
-    chip: "bg-amber-100 text-amber-700",
+    cell: "bg-amber-200 border-amber-400 hover:border-amber-500",
+    day: "text-amber-950",
+    dot: "bg-amber-700",
+    chip: "bg-amber-300 text-amber-950",
   },
   red: {
-    cell: "bg-rose-50 border-rose-200 hover:border-rose-300",
-    day: "text-rose-700",
-    dot: "bg-rose-500",
-    chip: "bg-rose-100 text-rose-700",
+    cell: "bg-rose-200 border-rose-400 hover:border-rose-500",
+    day: "text-rose-950",
+    dot: "bg-rose-700",
+    chip: "bg-rose-300 text-rose-950",
   },
   empty: {
-    cell: "bg-slate-50 border-slate-100 hover:border-slate-200",
-    day: "text-slate-400",
-    dot: "bg-slate-300",
-    chip: "bg-slate-100 text-slate-500",
+    cell: "bg-slate-200 border-slate-300 hover:border-slate-400",
+    day: "text-slate-600",
+    dot: "bg-slate-500",
+    chip: "bg-slate-300 text-slate-700",
   },
 };
 
@@ -135,7 +135,7 @@ export default function ContributionCalendar() {
           if (!item) return <div key={index}></div>;
 
           const s = statusStyles[item.status] ?? statusStyles.empty;
-          const showCount = item.count > 1;
+          const showCount = item.count > 0;
           const showHbCount = item.hbCount >= 1;
 
           return (
