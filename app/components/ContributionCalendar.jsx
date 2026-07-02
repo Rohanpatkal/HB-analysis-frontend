@@ -92,7 +92,7 @@ export default function ContributionCalendar() {
   };
 
   return (
-    <div className="w-full bg-white dark:bg-gray-900 rounded-3xl shadow-xl border p-4 sm:p-8">
+    <div className="w-full bg-white rounded-3xl shadow-xl border p-4 sm:p-8">
 
       {/* Header */}
 
@@ -100,7 +100,7 @@ export default function ContributionCalendar() {
 
         <button
           onClick={previousMonth}
-          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+          className="p-2 rounded-full hover:bg-gray-100"
         >
           <ChevronLeft />
         </button>
@@ -109,7 +109,7 @@ export default function ContributionCalendar() {
 
         <button
           onClick={nextMonth}
-          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+          className="p-2 rounded-full hover:bg-gray-100"
         >
           <ChevronRight />
         </button>
