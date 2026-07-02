@@ -99,11 +99,16 @@ function carryOverFromApi(raw, month, year) {
 }
 
 // Build { statuses, calendar, dayCounts } for a month from the API payload.
+// Days after today are always marked "future" and excluded from calculations.
 function getMonthFromApi(raw, month, year) {
   const daysInMonth = daysIn(month, year);
   const rows = monthRows(raw, month, year);
 
-  // Map day -> { count, hbCount }, defaulting missing days to zero.
+  // Compute today's ISO string once for cutoff comparisons.
+  const t = new Date();
+  const todayISO = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+
+  // Map day -> { count, hbCount }, future days default to zero.
   const dayCounts = {};
   const countByDay = {};
   for (let day = 1; day <= daysInMonth; day++) {
@@ -114,6 +119,7 @@ function getMonthFromApi(raw, month, year) {
   for (const row of rows) {
     const day = Number(row.day);
     if (!Number.isInteger(day) || day < 1 || day > daysInMonth) continue;
+    if (isoFor(year, month, day) > todayISO) continue; // skip future rows
     const count = Number(row.count) || 0;
     countByDay[day] = count;
     dayCounts[isoFor(year, month, day)] = {
@@ -123,19 +129,23 @@ function getMonthFromApi(raw, month, year) {
   }
 
   // Derive statuses: a smoked day is red and opens a yellow window.
+  // Future days receive "future" — not included in analysis.
   const statuses = new Array(daysInMonth);
   const calendar = {};
   let yellowUntil = carryOverFromApi(raw, month, year);
   for (let day = 1; day <= daysInMonth; day++) {
+    const iso = isoFor(year, month, day);
     let status;
-    if (countByDay[day] > 0) {
+    if (iso > todayISO) {
+      status = "future";
+    } else if (countByDay[day] > 0) {
       status = "red";
       yellowUntil = day + AFFECTED_DAYS;
     } else {
       status = day <= yellowUntil ? "yellow" : "green";
     }
     statuses[day - 1] = status;
-    calendar[isoFor(year, month, day)] = status;
+    calendar[iso] = status;
   }
 
   return { statuses, calendar, dayCounts };
@@ -201,25 +211,29 @@ function smokeFreeRuns(statuses) {
 }
 
 // All the stats derived from a month's statuses.
+// "future" statuses are excluded — only past and today count.
 function analyze(statuses, daysInMonth) {
-  const smokeFreeDays = statuses.filter((s) => s === "green").length;
-  const reducedDays = statuses.filter((s) => s === "yellow").length;
-  const smokingDays = statuses.filter((s) => s === "red").length;
+  const pastStatuses = statuses.filter((s) => s !== "future");
+  const pastDays = pastStatuses.length || daysInMonth; // fallback for months fully in the past
 
-  const runs = smokeFreeRuns(statuses);
+  const smokeFreeDays = pastStatuses.filter((s) => s === "green").length;
+  const reducedDays   = pastStatuses.filter((s) => s === "yellow").length;
+  const smokingDays   = pastStatuses.filter((s) => s === "red").length;
+
+  const runs = smokeFreeRuns(pastStatuses);
   const maxGap = runs.length ? Math.max(...runs) : 0; // longest smoke-free run
   const minGap = runs.length ? Math.min(...runs) : 0; // shortest smoke-free run
 
-  // Current streak = trailing run of green days.
+  // Current streak = trailing run of green days (past days only).
   let currentStreak = 0;
-  for (let i = statuses.length - 1; i >= 0; i--) {
-    if (statuses[i] === "green") currentStreak++;
+  for (let i = pastStatuses.length - 1; i >= 0; i--) {
+    if (pastStatuses[i] === "green") currentStreak++;
     else break;
   }
 
   const moneySaved = smokeFreeDays * COST_PER_SMOKING_DAY;
-  const recoveryScore = daysInMonth
-    ? Math.round((smokeFreeDays / daysInMonth) * 100)
+  const recoveryScore = pastDays
+    ? Math.round((smokeFreeDays / pastDays) * 100)
     : 0;
 
   return {
