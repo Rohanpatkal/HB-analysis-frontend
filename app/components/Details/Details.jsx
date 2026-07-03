@@ -3,6 +3,7 @@
 import styles from "./Details.module.css";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useDashboard } from "../../context/DashboardProvider";
+import { formatINR } from "../../utils/analytics.common";
 
 function TrendBadge({ delta, unit = "%" }) {
   if (delta > 0) {
@@ -67,7 +68,7 @@ export default function Details() {
           <Tile color="#10b981" label="Longest Gap" value={`${d.maxGap} days`} sub="best smoke-free run" />
           <Tile color="#8b5cf6" label="Shortest Gap" value={`${d.minGap} days`} sub="shortest run" />
           <Tile color="#0ea5e9" label="Current Streak" value={`${d.currentStreak} days`} />
-          <Tile color="#16a34a" label="Money Saved" value={`₹${d.moneySaved.toLocaleString("en-IN")}`} />
+          <Tile color="#16a34a" label="Money Saved" value={formatINR(d.moneySaved)} />
         </div>
       </div>
 

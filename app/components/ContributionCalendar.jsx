@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useDashboard } from "../context/DashboardProvider";
+import { isoFor } from "../utils/analytics.common";
 
 // ─── status styles ───────────────────────────────────────────────────────────
 const statusStyles = {
@@ -45,15 +46,11 @@ export default function ContributionCalendar() {
   const calendarData  = data.calendar;
   const countsData    = data.dayCounts ?? {};
 
-  // ─── today snapshot (stable for the lifetime of this render) ─────────────
-  const today = useMemo(() => new Date(), []);
-  const todayISO = useMemo(
-    () =>
-      `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(
-        today.getDate()
-      ).padStart(2, "0")}`,
-    [today]
-  );
+  // ─── today snapshot ──────────────────────────────────────────────────────
+  const todayISO = useMemo(() => {
+    const t = new Date();
+    return isoFor(t.getFullYear(), t.getMonth(), t.getDate());
+  }, []);
 
   const monthName = useMemo(
     () =>
@@ -75,9 +72,7 @@ export default function ContributionCalendar() {
     for (let i = 0; i < startDay; i++) calendar.push(null);
 
     for (let day = 1; day <= totalDays; day++) {
-      const mm       = String(month + 1).padStart(2, "0");
-      const dd       = String(day).padStart(2, "0");
-      const fullDate = `${year}-${mm}-${dd}`;
+      const fullDate = isoFor(year, month, day);
       const isFuture = fullDate > todayISO;
       const isToday  = fullDate === todayISO;
 
