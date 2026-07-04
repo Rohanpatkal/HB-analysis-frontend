@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import { DashboardProvider } from "./context/DashboardProvider";
 import { fetchAnalyticsData } from "../lib/api-client";
 import AnalyticsFilters from "./components/AnalyticsFilters";
@@ -7,14 +8,24 @@ import ContributionCalendar from "./components/ContributionCalendar";
 import MonthSummary from "./components/summuryDetails/MonthSummury";
 import Details from "./components/Details/Details";
 import RecoveryHighlights from "./components/RecoveryHighlights/RecoveryHighlights";
+import TouchScrollCounter from "./components/LogHabit/TouchScrollCounter";
 
 export default function Home() {
-  // fetchAnalyticsData is a stable module-level reference — safe to pass
-  // directly so DashboardProvider only fetches once on mount.
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const handleRefreshDashboard = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
   return (
-    <DashboardProvider fetcher={fetchAnalyticsData}>
-      <main className="min-h-screen py-6 px-4 sm:py-10 sm:px-6 lg:px-10">
-        <div className="mx-auto flex w-full flex-col gap-6 sm:gap-8">
+    <DashboardProvider fetcher={fetchAnalyticsData} key={refreshTrigger}>
+      <main className="min-h-screen bg-slate-50 py-6 px-4 sm:py-10 sm:px-6 lg:px-10">
+        <div className="mx-auto flex w-full flex-col gap-6 sm:gap-8 max-w-7xl">
+          
+          {/* Main Action Header Dashboard - Showing ONLY the standalone Touch Counter */}
+          <div className="w-full max-w-xl mx-auto">
+            <TouchScrollCounter onLogComplete={handleRefreshDashboard} />
+          </div>
 
           <RecoveryHighlights />
           <AnalyticsFilters />
@@ -27,7 +38,6 @@ export default function Home() {
           </div>
 
           <Details />
-
         </div>
       </main>
     </DashboardProvider>
