@@ -23,7 +23,7 @@ export default function Home() {
         <div className="mx-auto flex w-full flex-col gap-6 sm:gap-8 max-w-7xl">
           
           {/* Main Action Header Dashboard - Showing ONLY the standalone Touch Counter */}
-          <div className="w-full max-w-xl mx-auto">
+          <div className="w-full mx-auto">
             <TouchScrollCounter onLogComplete={handleRefreshDashboard} />
           </div>
 
