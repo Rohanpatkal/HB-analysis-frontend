@@ -13,29 +13,43 @@ import { getPeriodData, getYearData } from "../data/getPeriodData";
 const DashboardContext = createContext(null);
 
 /**
- * Master data provider for the whole dashboard.
+ * DashboardProvider — single source of truth for the whole dashboard.
  *
- * - Owns the selected period (month/year).
- * - Optionally fetches raw data via a `fetcher(month, year)` prop.
- * - Runs everything through getPeriodData() so every component receives
- *   the same derived shape (calendar, summary, highlights, achievements).
+ * Responsibilities:
+ *  - Fetches the full analytics payload ONCE on mount via the `fetcher` prop.
+ *  - Owns the selected period (month / year).
+ *  - Derives every component's data from the raw payload + selected period
+ *    using getPeriodData() and getYearData() — no component fetches independently.
  *
- * Plug in a real API by passing a fetcher:
- *   <DashboardProvider fetcher={(m, y) => api.getMonth(m, y)}>
- * When no fetcher is given, data is generated locally.
+ * Usage:
+ *   <DashboardProvider fetcher={fetchAnalyticsData}>
+ *     <YourComponents />
+ *   </DashboardProvider>
+ *
+ * What components receive via useDashboard():
+ *   period        — { month, year } currently selected
+ *   selectPeriod  — fn({ month, year }) to change the selected period
+ *   data          — shaped data for the selected month (calendar, summary, etc.)
+ *   yearData      — aggregated stats for the selected year
+ *   loading       — true while the initial fetch is in progress
+ *   error         — error message string if the fetch failed, else null
  */
 export function DashboardProvider({ children, fetcher }) {
   const now = new Date();
 
+  // Selected period — changing this re-derives data from the already-fetched payload.
   const [period, setPeriod] = useState({
     month: now.getMonth(),
     year: now.getFullYear(),
   });
+
+  // The raw API payload — fetched once, reused for every period change.
   const [raw, setRaw] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(Boolean(fetcher));
   const [error, setError] = useState(null);
 
-  // Fetch raw data whenever the period changes (only if a fetcher exists).
+  // Fetch the full dataset once on mount.
+  // The API returns ALL years/months in one response, so we only need one call.
   useEffect(() => {
     if (!fetcher) return;
 
@@ -43,7 +57,7 @@ export function DashboardProvider({ children, fetcher }) {
     setLoading(true);
     setError(null);
 
-    Promise.resolve(fetcher(period.month, period.year))
+    Promise.resolve(fetcher())
       .then((payload) => {
         if (active) setRaw(payload);
       })
@@ -54,19 +68,21 @@ export function DashboardProvider({ children, fetcher }) {
         if (active) setLoading(false);
       });
 
-    return () => {
-      active = false;
-    };
-  }, [fetcher, period.month, period.year]);
+    return () => { active = false; };
+  }, [fetcher]); // runs once — fetcher ref is stable
 
-  // Single source of truth: derive everything from period + raw data.
+  // Derive the selected month's data from the raw payload.
+  // Recomputes instantly (no network call) whenever period changes.
   const data = useMemo(
     () => getPeriodData(period.month, period.year, raw),
     [period.month, period.year, raw]
   );
 
-  // Yearly aggregation for the currently selected year.
-  const yearData = useMemo(() => getYearData(period.year), [period.year]);
+  // Derive yearly aggregates for the selected year.
+  const yearData = useMemo(
+    () => getYearData(period.year, raw),
+    [period.year, raw]
+  );
 
   const selectPeriod = useCallback(({ month, year }) => {
     setPeriod({ month, year });
@@ -87,7 +103,7 @@ export function DashboardProvider({ children, fetcher }) {
 export function useDashboard() {
   const ctx = useContext(DashboardContext);
   if (!ctx) {
-    throw new Error("useDashboard must be used within a DashboardProvider");
+    throw new Error("useDashboard must be used inside a <DashboardProvider>");
   }
   return ctx;
 }

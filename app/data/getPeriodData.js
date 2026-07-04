@@ -1,89 +1,124 @@
 // app/data/getPeriodData.js
+// ---------------------------------------------------------------------------
+// Analytics data layer — transforms the backend API response into the exact
+// shape each dashboard component consumes.
 //
-// Single source of truth for the dashboard.
-// Given a month (0-11) and year, it derives EVERY stat shown across the
-// app (calendar day statuses, month summary, recovery highlights,
-// achievements) so selecting a period updates all components at once.
+// Data flow:  Backend API  →  raw response  →  getPeriodData()  →  components
 //
-// The data is deterministic per (month, year): the same period always
-// produces the same numbers, while different periods differ. Swap the
-// body of getPeriodData for a real API response when the backend is ready.
+// Day statuses:
+//   "green"  = smoke-free day
+//   "yellow" = reduced / affected day (within AFFECTED_DAYS of a smoked day)
+//   "red"    = smoked day
+//   "future" = day is after today, excluded from all stats
+//
+// Expected raw shape from the backend:
+//   raw.data[year]["MM-YYYY"] = [ { day, count, hbCount }, ... ]
+//
+// A pre-normalized shape is also accepted:
+//   raw.calendar  = { "YYYY-MM-DD": "green" | "yellow" | "red" }
+//   raw.dayCounts = { "YYYY-MM-DD": { count, hbCount } }
+// ---------------------------------------------------------------------------
 
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
+import {
+  MONTHS,
+  MONTHS_SHORT,
+  AFFECTED_DAYS,
+  formatINR,
+  isoFor,
+  daysIn,
+  previousPeriod,
+  analyze,
+} from "../utils/analytics.common";
 
-// Small seeded PRNG (mulberry32) so results are stable per period.
-function makeRng(seed) {
-  let a = seed >>> 0;
-  return function () {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+// ---------------------------------------------------------------------------
+// Reading the raw API response
+// ---------------------------------------------------------------------------
+
+// Null-safe accessor — returns the rows array for a specific month.
+function monthRows(raw, month, year) {
+  const key = `${String(month + 1).padStart(2, "0")}-${year}`;
+  const rows = raw?.data?.[String(year)]?.[key];
+  return Array.isArray(rows) ? rows : [];
 }
 
-const COST_PER_SMOKING_DAY = 180; // ₹ saved per smoke-free day
-const AFFECTED_DAYS = 4; // a red day makes the next N days yellow
+// How many yellow days bleed from the previous month's last smoked day
+// into the start of the current month.
+function carryOverDays(raw, month, year) {
+  const prev = previousPeriod(month, year);
+  const rows = monthRows(raw, prev.month, prev.year);
+  if (rows.length === 0) return 0;
 
-// Decide the "red" (smoked) days for a given month. Deterministic per
-// (month, year) so the same period always produces the same pattern.
-function getRedFlags(month, year) {
-  const rng = makeRng(year * 12 + month + 1);
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const isRed = [];
-  for (let i = 0; i < daysInMonth; i++) {
-    isRed.push(rng() < 0.18); // ~18% smoking days
-  }
-  return { isRed, daysInMonth };
-}
+  const prevDays = daysIn(prev.month, prev.year);
+  let lastSmokedDay = 0;
 
-function isoFor(year, month, day) {
-  return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(
-    2,
-    "0"
-  )}`;
-}
-
-// Generate deterministic day statuses, including cross-month yellow
-// carry-over from the previous month's red days.
-function generateStatuses(month, year, daysInMonth) {
-  const { isRed } = getRedFlags(month, year);
-
-  const prevMonth = month === 0 ? 11 : month - 1;
-  const prevYear = month === 0 ? year - 1 : year;
-  const prev = getRedFlags(prevMonth, prevYear);
-
-  const statuses = new Array(daysInMonth).fill("green");
-
-  // Red days spread "yellow" to the following AFFECTED_DAYS days.
-  for (let i = 0; i < daysInMonth; i++) {
-    if (!isRed[i]) continue;
-    statuses[i] = "red";
-    for (let j = i + 1; j <= i + AFFECTED_DAYS && j < daysInMonth; j++) {
-      if (!isRed[j]) statuses[j] = "yellow";
+  for (const row of rows) {
+    const day = Number(row.day);
+    const count = Number(row.count) || 0;
+    if (Number.isInteger(day) && day >= 1 && day <= prevDays && count > 0) {
+      lastSmokedDay = Math.max(lastSmokedDay, day);
     }
   }
 
-  // Carry over the leftover yellow window from last month's red days.
-  for (let i = 0; i < prev.daysInMonth; i++) {
-    if (!prev.isRed[i]) continue;
-    for (let j = i + 1; j <= i + AFFECTED_DAYS; j++) {
-      if (j < prev.daysInMonth) continue;
-      const currIdx = j - prev.daysInMonth;
-      if (currIdx >= daysInMonth) break;
-      if (statuses[currIdx] !== "red") statuses[currIdx] = "yellow";
-    }
-  }
-
-  return statuses;
+  if (lastSmokedDay === 0) return 0;
+  return Math.max(0, AFFECTED_DAYS - (prevDays - lastSmokedDay));
 }
 
-// Read day statuses from a real calendar map: { "YYYY-MM-DD": "green" }.
-function statusesFromCalendar(map, month, year, daysInMonth) {
+// Build { statuses, calendar, dayCounts } from the raw analytics payload.
+// Days after today are marked "future" and excluded from stats.
+function buildMonthFromApi(raw, month, year) {
+  const daysInMonth = daysIn(month, year);
+  const rows = monthRows(raw, month, year);
+
+  const t = new Date();
+  const today = isoFor(t.getFullYear(), t.getMonth(), t.getDate());
+
+  // Default every day to zero counts; will be overwritten by API rows below.
+  const dayCounts = {};
+  const countByDay = {};
+  for (let day = 1; day <= daysInMonth; day++) {
+    dayCounts[isoFor(year, month, day)] = { count: 0, hbCount: 0 };
+    countByDay[day] = 0;
+  }
+
+  for (const row of rows) {
+    const day = Number(row.day);
+    if (!Number.isInteger(day) || day < 1 || day > daysInMonth) continue;
+    if (isoFor(year, month, day) > today) continue; // ignore future rows
+    const count = Number(row.count) || 0;
+    countByDay[day] = count;
+    dayCounts[isoFor(year, month, day)] = {
+      count,
+      hbCount: Number(row.hbCount) || 0,
+    };
+  }
+
+  // Derive day statuses: smoked day = red, next AFFECTED_DAYS = yellow, rest = green.
+  const statuses = new Array(daysInMonth);
+  const calendar = {};
+  let yellowUntil = carryOverDays(raw, month, year);
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const iso = isoFor(year, month, day);
+    let status;
+
+    if (iso > today) {
+      status = "future";
+    } else if (countByDay[day] > 0) {
+      status = "red";
+      yellowUntil = day + AFFECTED_DAYS;
+    } else {
+      status = day <= yellowUntil ? "yellow" : "green";
+    }
+
+    statuses[day - 1] = status;
+    calendar[iso] = status;
+  }
+
+  return { statuses, calendar, dayCounts };
+}
+
+// Read statuses from a pre-normalized calendar map: { "YYYY-MM-DD": "green" }.
+function buildStatusesFromMap(map, month, year, daysInMonth) {
   const statuses = new Array(daysInMonth).fill("green");
   for (let day = 1; day <= daysInMonth; day++) {
     const s = map[isoFor(year, month, day)];
@@ -94,344 +129,159 @@ function statusesFromCalendar(map, month, year, daysInMonth) {
   return statuses;
 }
 
-function isAnalyticsPayload(raw) {
-  return raw && typeof raw === "object" && raw.data && typeof raw.data === "object";
-}
-
-function getAnalyticsMonthData(raw, month, year) {
-  if (!isAnalyticsPayload(raw)) return null;
-
-  const yearKey = String(year);
-  const monthKey = `${String(month + 1).padStart(2, "0")}-${yearKey}`;
-  const monthRows = raw.data?.[yearKey]?.[monthKey] ?? [];
-
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const calendar = {};
+// Read counts from a pre-normalized dayCounts map; missing days → zero.
+function buildCountsFromMap(month, year, daysInMonth, source) {
   const dayCounts = {};
-
-  // Store count for every day (default 0).
-  const counts = {};
-  for (let day = 1; day <= daysInMonth; day++) {
-    counts[day] = 0;
-  }
-
-  for (const item of monthRows) {
-    const day = Number(item.day);
-    const count = Number(item.count) || 0;
-
-    if (!Number.isInteger(day) || day < 1 || day > daysInMonth) continue;
-
-    counts[day] = count;
-    const iso = isoFor(year, month, day);
-    dayCounts[iso] = {
-      count,
-      hbCount: Number(item.hbCount) || 0,
-    };
-  }
-
-  // Fill missing dayCounts.
   for (let day = 1; day <= daysInMonth; day++) {
     const iso = isoFor(year, month, day);
-    if (!dayCounts[iso]) {
-      dayCounts[iso] = {
-        count: 0,
-        hbCount: 0,
-      };
-    }
+    dayCounts[iso] = source?.[iso] ?? { count: 0, hbCount: 0 };
   }
-
-  const prevMonth = month === 0 ? 11 : month - 1;
-  const prevYear = month === 0 ? year - 1 : year;
-  const prevYearKey = String(prevYear);
-  const prevMonthKey = `${String(prevMonth + 1).padStart(2, "0")}-${prevYearKey}`;
-  const prevMonthRows = raw.data?.[prevYearKey]?.[prevMonthKey] ?? [];
-  const prevDaysInMonth = new Date(prevYear, prevMonth + 1, 0).getDate();
-
-  let carryYellowDays = 0;
-  if (Array.isArray(prevMonthRows) && prevMonthRows.length > 0) {
-    let lastRedDay = 0;
-    for (const item of prevMonthRows) {
-      const day = Number(item.day);
-      const count = Number(item.count) || 0;
-      if (Number.isInteger(day) && day >= 1 && day <= prevDaysInMonth && count > 0) {
-        lastRedDay = Math.max(lastRedDay, day);
-      }
-    }
-    if (lastRedDay > 0) {
-      carryYellowDays = Math.max(0, AFFECTED_DAYS - (prevDaysInMonth - lastRedDay));
-    }
-  }
-
-  // Build calendar.
-  let yellowUntil = carryYellowDays;
-  for (let day = 1; day <= daysInMonth; day++) {
-    const iso = isoFor(year, month, day);
-    if (counts[day] > 0) {
-      calendar[iso] = "red";
-      yellowUntil = day + AFFECTED_DAYS;
-    } else if (day <= yellowUntil) {
-      calendar[iso] = "yellow";
-    } else {
-      calendar[iso] = "green";
-    }
-  }
-
-  return {
-    calendar,
-    dayCounts,
-  };
-}
-// Return the lengths of every run of consecutive smoke-free (green) days.
-function smokeFreeRuns(statuses) {
-  const runs = [];
-  let run = 0;
-  for (const s of statuses) {
-    if (s === "green") {
-      run++;
-    } else if (run > 0) {
-      runs.push(run);
-      run = 0;
-    }
-  }
-  if (run > 0) runs.push(run);
-  return runs;
+  return dayCounts;
 }
 
-// Derive the numeric stats for a month from its day statuses.
-function analyze(statuses, daysInMonth) {
-  const smokeFreeDays = statuses.filter((s) => s === "green").length;
-  const reducedDays = statuses.filter((s) => s === "yellow").length;
-  const smokingDays = statuses.filter((s) => s === "red").length;
-
-  const runs = smokeFreeRuns(statuses);
-  const maxGap = runs.length ? Math.max(...runs) : 0; // longest smoke-free run
-  const minGap = runs.length ? Math.min(...runs) : 0; // shortest smoke-free run
-
-  let currentStreak = 0;
-  for (let i = statuses.length - 1; i >= 0; i--) {
-    if (statuses[i] === "green") currentStreak++;
-    else break;
+// Entry point: handles both raw API shape and pre-normalized shape.
+function resolveMonth(raw, month, year) {
+  if (raw?.calendar) {
+    const daysInMonth = daysIn(month, year);
+    const statuses = buildStatusesFromMap(raw.calendar, month, year, daysInMonth);
+    const calendar = {};
+    for (let day = 1; day <= daysInMonth; day++) {
+      calendar[isoFor(year, month, day)] = statuses[day - 1];
+    }
+    const dayCounts = buildCountsFromMap(month, year, daysInMonth, raw.dayCounts);
+    return { statuses, calendar, dayCounts };
   }
 
-  const moneySaved = smokeFreeDays * COST_PER_SMOKING_DAY;
-  const recoveryScore = daysInMonth
-    ? Math.round((smokeFreeDays / daysInMonth) * 100)
-    : 0;
+  return buildMonthFromApi(raw, month, year);
+}
 
+// ---------------------------------------------------------------------------
+// Data shaping — one function per component
+// ---------------------------------------------------------------------------
+
+function buildSummary(stats, totalCount) {
+  const { currentStreak, longestStreak, smokeFreeDays, reducedDays, smokingDays, moneySaved, recoveryScore } = stats;
+  return [
+    { title: "Current Streak",  value: `${currentStreak} Days`, icon: "🔥", color: "#22c55e" },
+    { title: "Longest Streak",  value: `${longestStreak} Days`, icon: "🏆", color: "#f59e0b" },
+    { title: "Smoke-Free Days", value: `${smokeFreeDays}`,      icon: "🚭", color: "#2563eb" },
+    { title: "Reduced Days",    value: `${reducedDays}`,        icon: "🟡", color: "#fbbf24" },
+    { title: "Smoking Days",    value: `${smokingDays}`,        icon: "🚬", color: "#ef4444" },
+    { title: "Total Count",     value: `${totalCount}`,         icon: "📊", color: "#0ea5e9" },
+    { title: "Money Saved",     value: formatINR(moneySaved),   icon: "💰", color: "#10b981" },
+    { title: "Recovery Score",  value: `${recoveryScore}%`,     icon: "❤️", color: "#ec4899" },
+  ];
+}
+
+function buildHighlights(stats) {
+  const { longestStreak, moneySaved, smokeFreeDays, recoveryScore, currentStreak } = stats;
   return {
-    smokeFreeDays,
-    reducedDays,
-    smokingDays,
-    maxGap,
-    minGap,
-    currentStreak,
-    moneySaved,
-    recoveryScore,
-    longestStreak: maxGap,
+    level:            Math.max(1, Math.round(recoveryScore / 8)),
+    nextBadgePercent: Math.min(99, recoveryScore + (smokeFreeDays % 12)),
+    daysRemaining:    Math.max(0, 30 - currentStreak),
+    stats: [
+      { key: "streak",   value: `${longestStreak}`,       label: "Best Streak",  color: "#f97316" },
+      { key: "money",    value: formatINR(moneySaved),    label: "Money Saved",  color: "#16a34a" },
+      { key: "free",     value: `${smokeFreeDays}`,       label: "Smoke-Free",   color: "#2563eb" },
+      { key: "recovery", value: `${recoveryScore}%`,      label: "Recovery",     color: "#ec4899" },
+    ],
   };
 }
 
-// Master transform: pass raw API data in and get the unified shape every
-// component consumes. `raw` may be a { calendar: {...} } object or a bare
-// { "YYYY-MM-DD": status } map. When omitted, data is generated locally.
+// ---------------------------------------------------------------------------
+// Public exports
+// ---------------------------------------------------------------------------
+
+// Returns the full shaped data object for one month. Called on every period
+// or API response change in DashboardProvider.
 export function getPeriodData(month, year, raw = null) {
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const analyticsMonthData = getAnalyticsMonthData(raw, month, year);
-  const calendarInput = raw?.calendar ?? analyticsMonthData?.calendar ?? raw ?? null;
-
-  const statuses = calendarInput
-    ? statusesFromCalendar(calendarInput, month, year, daysInMonth)
-    : generateStatuses(month, year, daysInMonth);
-
-  // Build the calendar map keyed by ISO date.
-  const calendar = {};
-  for (let day = 1; day <= daysInMonth; day++) {
-    calendar[isoFor(year, month, day)] = statuses[day - 1];
-  }
-
-  const countsFromAnalytics = analyticsMonthData?.dayCounts;
-  const countRng = makeRng((year * 12 + month + 1) * 7 + 3);
-  const dayCounts = {};
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    const iso = isoFor(year, month, day);
-    if (countsFromAnalytics?.[iso]) {
-      dayCounts[iso] = countsFromAnalytics[iso];
-      continue;
-    }
-
-    const status = statuses[day - 1];
-    let count = 0;
-    let hbCount = 0;
-
-    if (status === "red") {
-      count = 3 + Math.floor(countRng() * 12); // 3..14
-      hbCount = 1 + Math.floor(countRng() * 4); // 1..4
-    } else if (status === "yellow") {
-      count = 1 + Math.floor(countRng() * 3); // 1..3
-      hbCount = Math.floor(countRng() * 2); // 0..1
-    }
-
-    dayCounts[iso] = { count, hbCount };
-  }
-
-  // Analyse the statuses.
-  const {
-    smokeFreeDays,
-    reducedDays,
-    smokingDays,
-    maxGap,
-    minGap,
-    currentStreak,
-    moneySaved,
-    recoveryScore,
-    longestStreak,
-  } = analyze(statuses, daysInMonth);
+  const daysInMonth = daysIn(month, year);
+  const { statuses, calendar, dayCounts } = resolveMonth(raw, month, year);
 
   const totalCount = Object.values(dayCounts).reduce(
-    (sum, day) => sum + (Number(day.count) || 0),
+    (sum, d) => sum + (Number(d.count) || 0),
     0
   );
 
-  // Improvement vs the previous month (generated baseline).
-  const prevM = month === 0 ? 11 : month - 1;
-  const prevY = month === 0 ? year - 1 : year;
-  const prevDays = new Date(prevY, prevM + 1, 0).getDate();
+  const stats = analyze(statuses, daysInMonth);
+
+  // Recovery improvement = this month's score vs last month's score.
+  const prev = previousPeriod(month, year);
+  const prevDays = daysIn(prev.month, prev.year);
   const prevRecovery = analyze(
-    generateStatuses(prevM, prevY, prevDays),
+    resolveMonth(raw, prev.month, prev.year).statuses,
     prevDays
   ).recoveryScore;
-  const recoveryImprovement = recoveryScore - prevRecovery;
-
-  const level = Math.max(1, Math.round(recoveryScore / 8));
-  const nextBadgePercent = Math.min(99, recoveryScore + (smokeFreeDays % 12));
-  const daysRemaining = Math.max(0, 30 - currentStreak);
-
-  const monthName = `${MONTHS[month]} ${year}`;
-
-  const inr = (n) => `₹${n.toLocaleString("en-IN")}`;
+  const recoveryImprovement = stats.recoveryScore - prevRecovery;
 
   return {
-    period: { month, year, monthName },
+    period: { month, year, monthName: `${MONTHS[month]} ${year}` },
 
-    // For ContributionCalendar
+    // ContributionCalendar
     calendar,
     dayCounts,
 
-    // For MonthSummary
-    summary: [
-      { title: "Current Streak", value: `${currentStreak} Days`, icon: "🔥", color: "#22c55e" },
-      { title: "Longest Streak", value: `${longestStreak} Days`, icon: "🏆", color: "#f59e0b" },
-      { title: "Smoke-Free Days", value: `${smokeFreeDays}`, icon: "🚭", color: "#2563eb" },
-      { title: "Reduced Days", value: `${reducedDays}`, icon: "🟡", color: "#fbbf24" },
-      { title: "Smoking Days", value: `${smokingDays}`, icon: "🚬", color: "#ef4444" },
-      { title: "Total Count", value: `${totalCount}`, icon: "📊", color: "#0ea5e9" },
-      { title: "Money Saved", value: inr(moneySaved), icon: "💰", color: "#10b981" },
-      { title: "Recovery Score", value: `${recoveryScore}%`, icon: "❤️", color: "#ec4899" },
-    ],
+    // MonthSummary
+    summary: buildSummary(stats, totalCount),
 
-    // For RecoveryHighlights
-    highlights: {
-      level,
-      nextBadgePercent,
-      daysRemaining,
-      stats: [
-        { key: "streak", value: `${longestStreak}`, label: "Best Streak", color: "#f97316" },
-        { key: "money", value: inr(moneySaved), label: "Money Saved", color: "#16a34a" },
-        { key: "free", value: `${smokeFreeDays}`, label: "Smoke-Free", color: "#2563eb" },
-        { key: "recovery", value: `${recoveryScore}%`, label: "Recovery", color: "#ec4899" },
-      ],
-    },
+    // RecoveryHighlights
+    highlights: buildHighlights(stats),
 
-    // For Achievements
-    achievements: [
-      { title: "Longest Streak", value: `${longestStreak} Days`, icon: "🔥", variant: "orange", progress: Math.min(100, longestStreak * 4) },
-      { title: "Money Saved", value: inr(moneySaved), icon: "💰", variant: "green", progress: Math.min(100, Math.round(moneySaved / 60)) },
-      { title: "Smoke-Free Days", value: `${smokeFreeDays}`, icon: "📅", variant: "blue", progress: Math.round((smokeFreeDays / daysInMonth) * 100) },
-      { title: "Recovery Score", value: `${recoveryScore}%`, icon: "🏆", variant: "gold", progress: recoveryScore },
-    ],
-
-    // For the Details panel (monthly breakdown).
+    // Details panel — monthly breakdown
     details: {
-      totalDays: daysInMonth,
-      smokeFreeDays,
-      reducedDays,
-      smokingDays,
-      maxGap,
-      minGap,
-      currentStreak,
-      longestStreak,
-      moneySaved,
-      recoveryScore,
+      totalDays:    daysInMonth,
+      smokeFreeDays: stats.smokeFreeDays,
+      reducedDays:   stats.reducedDays,
+      smokingDays:   stats.smokingDays,
+      maxGap:        stats.maxGap,
+      minGap:        stats.minGap,
+      currentStreak: stats.currentStreak,
+      longestStreak: stats.longestStreak,
+      moneySaved:    stats.moneySaved,
+      recoveryScore: stats.recoveryScore,
       recoveryImprovement,
     },
   };
 }
 
-const MS_MONTHS_SHORT = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
-// Yearly aggregation across all 12 months of the given year.
-export function getYearData(year) {
-  const inr = (n) => `₹${n.toLocaleString("en-IN")}`;
-
+// Returns aggregated stats for all 12 months of the given year.
+// Called in DashboardProvider whenever the selected year changes.
+export function getYearData(year, raw = null) {
   const months = [];
+
   for (let m = 0; m < 12; m++) {
-    const daysInMonth = new Date(year, m + 1, 0).getDate();
-    const a = analyze(generateStatuses(m, year, daysInMonth), daysInMonth);
-    months.push({ month: m, name: MS_MONTHS_SHORT[m], daysInMonth, ...a });
+    const dim = daysIn(m, year);
+    const { statuses } = buildMonthFromApi(raw, m, year);
+    const stats = analyze(statuses, dim);
+    months.push({ month: m, name: MONTHS_SHORT[m], daysInMonth: dim, ...stats });
   }
 
-  const sum = (fn) => months.reduce((acc, x) => acc + fn(x), 0);
+  const sum = (pick) => months.reduce((acc, m) => acc + pick(m), 0);
+  const avg = (pick) => Math.round(sum(pick) / months.length);
 
-  const totalDays = sum((x) => x.daysInMonth);
-  const totalSmokeFree = sum((x) => x.smokeFreeDays);
-  const totalReduced = sum((x) => x.reducedDays);
-  const totalSmoking = sum((x) => x.smokingDays);
-  const totalMoneySaved = sum((x) => x.moneySaved);
+  const totalMoneySaved  = sum((m) => m.moneySaved);
+  const positiveMinGaps  = months.map((m) => m.minGap).filter((g) => g > 0);
+  const bestMonth        = months.reduce((b, m) => (m.smokeFreeDays > b.smokeFreeDays ? m : b));
+  const toughestMonth    = months.reduce((b, m) => (m.smokingDays   > b.smokingDays   ? m : b));
 
-  const longestStreak = Math.max(...months.map((x) => x.maxGap));
-  const positiveMinGaps = months.map((x) => x.minGap).filter((g) => g > 0);
-  const shortestGap = positiveMinGaps.length ? Math.min(...positiveMinGaps) : 0;
-
-  const avgRecovery = Math.round(sum((x) => x.recoveryScore) / 12);
-
-  const bestMonth = months.reduce((b, x) =>
-    x.smokeFreeDays > b.smokeFreeDays ? x : b
-  );
-  const toughestMonth = months.reduce((b, x) =>
-    x.smokingDays > b.smokingDays ? x : b
-  );
-
-  // Trend: 2nd-half average recovery vs 1st-half average recovery.
-  const firstHalf = Math.round(
-    months.slice(0, 6).reduce((s, x) => s + x.recoveryScore, 0) / 6
-  );
-  const secondHalf = Math.round(
-    months.slice(6).reduce((s, x) => s + x.recoveryScore, 0) / 6
-  );
-  const improvement = secondHalf - firstHalf;
+  // Trend: compare 2nd-half recovery average vs 1st-half.
+  const firstHalf  = Math.round(months.slice(0, 6).reduce((s, m) => s + m.recoveryScore, 0) / 6);
+  const secondHalf = Math.round(months.slice(6).reduce((s, m) => s + m.recoveryScore, 0) / 6);
 
   return {
     year,
-    months, // per-month breakdown for a mini chart/table
-    totalDays,
-    totalSmokeFree,
-    totalReduced,
-    totalSmoking,
+    months,            // per-month array used by the mini bar chart
+    totalDays:         sum((m) => m.daysInMonth),
+    totalSmokeFree:    sum((m) => m.smokeFreeDays),
+    totalReduced:      sum((m) => m.reducedDays),
+    totalSmoking:      sum((m) => m.smokingDays),
     totalMoneySaved,
-    totalMoneySavedLabel: inr(totalMoneySaved),
-    longestStreak,
-    shortestGap,
-    avgRecovery,
-    bestMonth: { name: bestMonth.name, smokeFreeDays: bestMonth.smokeFreeDays },
-    toughestMonth: {
-      name: toughestMonth.name,
-      smokingDays: toughestMonth.smokingDays,
-    },
-    improvement,
+    totalMoneySavedLabel: formatINR(totalMoneySaved),
+    longestStreak:     Math.max(...months.map((m) => m.maxGap)),
+    shortestGap:       positiveMinGaps.length ? Math.min(...positiveMinGaps) : 0,
+    avgRecovery:       avg((m) => m.recoveryScore),
+    bestMonth:         { name: bestMonth.name,     smokeFreeDays: bestMonth.smokeFreeDays },
+    toughestMonth:     { name: toughestMonth.name, smokingDays:   toughestMonth.smokingDays },
+    improvement:       secondHalf - firstHalf,
   };
 }
- 
