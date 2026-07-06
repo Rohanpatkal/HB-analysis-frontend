@@ -48,8 +48,9 @@ export default function LogHabitDrawer({ onClose }) {
   }
 
   async function handleSave() {
-    if (!userId)   { setError("You are not logged in."); return; }
-    if (count < 1) { setError("Count must be at least 1."); return; }
+    if (!userId) { setError("You are not logged in."); return; }
+    // count can be 0 when the user is only logging a habit break (hbCount)
+    if (count < 0) { setError("Count cannot be negative."); return; }
 
     setSaving(true);
     setError("");
