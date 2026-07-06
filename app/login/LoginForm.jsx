@@ -33,7 +33,7 @@ export default function LoginForm() {
 
       // Both endpoints return { success, userId, token, user }
       login(res.userId, res.token);
-      router.push("/");
+      router.push("/dashboard");
     } catch (err) {
       setError(err.message);
     } finally {
