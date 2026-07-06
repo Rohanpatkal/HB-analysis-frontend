@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import styles from "./RecoveryHighlights.module.css";
-import { Trophy } from "lucide-react";
+import { Trophy, Users } from "lucide-react";
 import { useDashboard } from "../../context/DashboardProvider";
+import { pingVisitor } from "../../../lib/api";
 
 export default function RecoveryHighlights() {
   const { data } = useDashboard();
@@ -14,6 +16,18 @@ export default function RecoveryHighlights() {
     stats = [],
   } = data.highlights ?? {};
 
+  const [totalVisitors, setTotalVisitors] = useState(null);
+  const [todayVisitors, setTodayVisitors] = useState(null);
+
+  useEffect(() => {
+    pingVisitor()
+      .then((res) => {
+        if (res?.total !== undefined) setTotalVisitors(res.total);
+        if (res?.today !== undefined) setTodayVisitors(res.today);
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <section className={styles.hero}>
       <div className={styles.glow}></div>
@@ -24,9 +38,23 @@ export default function RecoveryHighlights() {
           <p>{monthName ? `${monthName} overview` : "Your recovery journey"}</p>
         </div>
 
-        <div className={styles.level}>
-          <Trophy size={18} />
-          <span>Level {level}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          {/* Visitor badge */}
+          <div className={styles.visitorBadge}>
+            <Users size={15} />
+            <span className={styles.visitorTotal}>
+              {totalVisitors !== null ? totalVisitors.toLocaleString() : "—"}
+            </span>
+            <span className={styles.visitorLabel}>visitors</span>
+            {todayVisitors !== null && (
+              <span className={styles.visitorToday}>+{todayVisitors} today</span>
+            )}
+          </div>
+
+          <div className={styles.level}>
+            <Trophy size={18} />
+            <span>Level {level}</span>
+          </div>
         </div>
       </div>
 
@@ -36,7 +64,6 @@ export default function RecoveryHighlights() {
             <div className={styles.icon} style={{ background: item.color }}>
               {item.label?.charAt(0)}
             </div>
-
             <div>
               <h3>{item.value}</h3>
               <span>{item.label}</span>

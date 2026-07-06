@@ -46,6 +46,42 @@
     backdrop-filter: blur(10px);
 }
 
+/* ── Visitor badge ──────────────────────────────────────────── */
+.visitorBadge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .10);
+    border: 1px solid rgba(255, 255, 255, .15);
+    backdrop-filter: blur(10px);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.visitorTotal {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #4ade80;
+}
+
+.visitorLabel {
+    color: #cbd5e1;
+    font-weight: 400;
+}
+
+.visitorToday {
+    background: rgba(74, 222, 128, .18);
+    border: 1px solid rgba(74, 222, 128, .3);
+    color: #4ade80;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
 .stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -174,6 +210,14 @@
 
     .hero {
         padding: 22px;
+    }
+
+    .visitorBadge {
+        font-size: 0.75rem;
+    }
+
+    .visitorTotal {
+        font-size: 0.9rem;
     }
 
 }

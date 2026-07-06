@@ -103,4 +103,8 @@
   .pageContent {
     padding: 20px 16px 80px; /* extra bottom for the FAB */
   }
+
+  .visitorWrap {
+    display: none; /* hide visitor counter on small screens — space limited */
+  }
 }

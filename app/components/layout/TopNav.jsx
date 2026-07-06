@@ -1,6 +1,7 @@
 "use client";
 
 import { useUser } from "../../context/UserContext";
+import VisitorCounter from "./VisitorCounter";
 import styles from "./layout.module.css";
 
 export default function TopNav({ onLogHabit }) {
@@ -16,6 +17,12 @@ export default function TopNav({ onLogHabit }) {
 
       {/* Actions */}
       <div className={styles.navActions}>
+
+        {/* Visitor counter — hidden on very small screens via CSS */}
+        <div className={styles.visitorWrap}>
+          <VisitorCounter />
+        </div>
+
         <button
           className={styles.logBtn}
           onClick={onLogHabit}
@@ -31,6 +38,7 @@ export default function TopNav({ onLogHabit }) {
         >
           Sign Out
         </button>
+
       </div>
     </header>
   );
