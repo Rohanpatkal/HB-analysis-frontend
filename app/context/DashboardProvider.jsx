@@ -24,6 +24,7 @@ const DashboardContext = createContext(null);
  *   selectPeriod  — change the selected period
  *   data          — shaped data for the selected month
  *   yearData      — aggregated stats for the selected year
+ *   globalSummary — backend /summary data: { totalCount, yearMax, yearMin, monthMax, monthMin, years[] }
  *   loading       — true while fetching
  *   error         — error message or null
  *   refresh       — re-fetch from the API (call after logging a habit)
@@ -39,7 +40,6 @@ export function DashboardProvider({ children, fetcher, userId }) {
   const [raw, setRaw]       = useState(null);
   const [loading, setLoading] = useState(Boolean(fetcher && userId));
   const [error, setError]   = useState(null);
-
   // Load the full dataset. Called on mount and after a habit is saved.
   const load = useCallback(() => {
     if (!fetcher || !userId) return;
@@ -70,13 +70,16 @@ export function DashboardProvider({ children, fetcher, userId }) {
     [period.year, raw]
   );
 
+  // Global summary directly from the backend /summary endpoint.
+  const globalSummary = useMemo(() => raw?.summary ?? null, [raw]);
+
   const selectPeriod = useCallback(({ month, year }) => {
     setPeriod({ month, year });
   }, []);
 
   const value = useMemo(
-    () => ({ period, selectPeriod, data, yearData, loading, error, refresh: load }),
-    [period, selectPeriod, data, yearData, loading, error, load]
+    () => ({ period, selectPeriod, data, yearData, globalSummary, loading, error, refresh: load }),
+    [period, selectPeriod, data, yearData, globalSummary, loading, error, load]
   );
 
   return (

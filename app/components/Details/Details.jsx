@@ -9,16 +9,14 @@ function TrendBadge({ delta, unit = "%" }) {
   if (delta > 0) {
     return (
       <span className={`${styles.badge} ${styles.up}`}>
-        <TrendingUp size={15} /> +{delta}
-        {unit} vs prev
+        <TrendingUp size={15} /> +{delta}{unit} vs prev
       </span>
     );
   }
   if (delta < 0) {
     return (
       <span className={`${styles.badge} ${styles.down}`}>
-        <TrendingDown size={15} /> {delta}
-        {unit} vs prev
+        <TrendingDown size={15} /> {delta}{unit} vs prev
       </span>
     );
   }
@@ -42,15 +40,73 @@ function Tile({ color, label, value, sub }) {
   );
 }
 
+// Converts "MM/YYYY" from backend into "Jan 2024" style label
+function formatMonthKey(key) {
+  if (!key) return "—";
+  const [mm, yyyy] = key.split("/");
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const idx = parseInt(mm, 10) - 1;
+  return `${months[idx] ?? mm} ${yyyy}`;
+}
+
 export default function Details() {
-  const { data, yearData, period } = useDashboard();
+  const { data, yearData, period, globalSummary } = useDashboard();
   const d = data.details;
 
   const maxSmokeFree = Math.max(...yearData.months.map((m) => m.smokeFreeDays), 1);
 
   return (
     <div className={styles.wrapper}>
-      {/* Monthly details */}
+
+      {/* ── Global Summary (from backend /summary endpoint) ─────────────────── */}
+      {globalSummary && (
+        <div className={styles.panel}>
+          <div className={styles.panelHead}>
+            <div>
+              <h3>🌍 All-Time Summary</h3>
+              <p>Across all {globalSummary.totalYears} year{globalSummary.totalYears !== 1 ? "s" : ""} of data</p>
+            </div>
+            <span className={`${styles.badge} ${styles.flat}`}>
+              {globalSummary.totalMonths} months logged
+            </span>
+          </div>
+
+          <div className={styles.grid}>
+            <Tile
+              color="#0ea5e9"
+              label="Total Cigarettes"
+              value={globalSummary.totalCount.toLocaleString()}
+              sub="all time"
+            />
+            <Tile
+              color="#ef4444"
+              label="Worst Year"
+              value={globalSummary.yearMax.year}
+              sub={`${globalSummary.yearMax.count.toLocaleString()} cigarettes`}
+            />
+            <Tile
+              color="#22c55e"
+              label="Best Year"
+              value={globalSummary.yearMin.year}
+              sub={`${globalSummary.yearMin.count.toLocaleString()} cigarettes`}
+            />
+            <Tile
+              color="#f43f5e"
+              label="Worst Month"
+              value={formatMonthKey(globalSummary.monthMax.month)}
+              sub={`${globalSummary.monthMax.count.toLocaleString()} cigarettes`}
+            />
+            <Tile
+              color="#10b981"
+              label="Best Month"
+              value={formatMonthKey(globalSummary.monthMin.month)}
+              sub={`${globalSummary.monthMin.count.toLocaleString()} cigarettes`}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── Monthly Details ───────────────────────────────────────────────────── */}
       <div className={styles.panel}>
         <div className={styles.panelHead}>
           <div>
@@ -61,18 +117,18 @@ export default function Details() {
         </div>
 
         <div className={styles.grid}>
-          <Tile color="#3b82f6" label="Total Days" value={d.totalDays} />
-          <Tile color="#22c55e" label="Smoke-Free" value={d.smokeFreeDays} sub={`${d.recoveryScore}% of month`} />
-          <Tile color="#f59e0b" label="Reduced" value={d.reducedDays} sub="affected days" />
-          <Tile color="#ef4444" label="Smoking" value={d.smokingDays} />
-          <Tile color="#10b981" label="Longest Gap" value={`${d.maxGap} days`} sub="best smoke-free run" />
-          <Tile color="#8b5cf6" label="Shortest Gap" value={`${d.minGap} days`} sub="shortest run" />
-          <Tile color="#0ea5e9" label="Current Streak" value={`${d.currentStreak} days`} />
-          <Tile color="#16a34a" label="Money Saved" value={formatINR(d.moneySaved)} />
+          <Tile color="#3b82f6" label="Total Days"      value={d.totalDays} />
+          <Tile color="#22c55e" label="Smoke-Free"      value={d.smokeFreeDays} sub={`${d.recoveryScore}% of month`} />
+          <Tile color="#f59e0b" label="Reduced"         value={d.reducedDays}   sub="affected days" />
+          <Tile color="#ef4444" label="Smoking"         value={d.smokingDays} />
+          <Tile color="#10b981" label="Longest Gap"     value={`${d.maxGap} days`}     sub="best smoke-free run" />
+          <Tile color="#8b5cf6" label="Shortest Gap"    value={`${d.minGap} days`}     sub="shortest run" />
+          <Tile color="#0ea5e9" label="Current Streak"  value={`${d.currentStreak} days`} />
+          <Tile color="#16a34a" label="Money Saved"     value={formatINR(d.moneySaved)} />
         </div>
       </div>
 
-      {/* Yearly details */}
+      {/* ── Yearly Details ────────────────────────────────────────────────────── */}
       <div className={styles.panel}>
         <div className={styles.panelHead}>
           <div>
@@ -83,18 +139,18 @@ export default function Details() {
         </div>
 
         <div className={styles.grid}>
-          <Tile color="#3b82f6" label="Total Days" value={yearData.totalDays} />
-          <Tile color="#22c55e" label="Smoke-Free" value={yearData.totalSmokeFree} sub={`avg ${yearData.avgRecovery}% recovery`} />
-          <Tile color="#f59e0b" label="Reduced" value={yearData.totalReduced} />
-          <Tile color="#ef4444" label="Smoking" value={yearData.totalSmoking} />
-          <Tile color="#10b981" label="Longest Streak" value={`${yearData.longestStreak} days`} sub="max gap this year" />
-          <Tile color="#8b5cf6" label="Shortest Gap" value={`${yearData.shortestGap} days`} sub="min gap this year" />
-          <Tile color="#0ea5e9" label="Best Month" value={yearData.bestMonth.name} sub={`${yearData.bestMonth.smokeFreeDays} smoke-free`} />
-          <Tile color="#f43f5e" label="Toughest Month" value={yearData.toughestMonth.name} sub={`${yearData.toughestMonth.smokingDays} smoking`} />
-          <Tile color="#16a34a" label="Money Saved" value={yearData.totalMoneySavedLabel} />
+          <Tile color="#3b82f6" label="Total Days"      value={yearData.totalDays} />
+          <Tile color="#22c55e" label="Smoke-Free"      value={yearData.totalSmokeFree} sub={`avg ${yearData.avgRecovery}% recovery`} />
+          <Tile color="#f59e0b" label="Reduced"         value={yearData.totalReduced} />
+          <Tile color="#ef4444" label="Smoking"         value={yearData.totalSmoking} />
+          <Tile color="#10b981" label="Longest Streak"  value={`${yearData.longestStreak} days`} sub="max gap this year" />
+          <Tile color="#8b5cf6" label="Shortest Gap"    value={`${yearData.shortestGap} days`}   sub="min gap this year" />
+          <Tile color="#0ea5e9" label="Best Month"      value={yearData.bestMonth.name}      sub={`${yearData.bestMonth.smokeFreeDays} smoke-free`} />
+          <Tile color="#f43f5e" label="Toughest Month"  value={yearData.toughestMonth.name}  sub={`${yearData.toughestMonth.smokingDays} smoking`} />
+          <Tile color="#16a34a" label="Money Saved"     value={yearData.totalMoneySavedLabel} />
         </div>
 
-        {/* Mini month-by-month chart */}
+        {/* Mini month-by-month bar chart */}
         <div className={styles.chart}>
           <div className={styles.chartTitle}>Smoke-free days per month</div>
           <div className={styles.bars}>
@@ -104,13 +160,14 @@ export default function Details() {
                   className={styles.bar}
                   style={{ height: `${(m.smokeFreeDays / maxSmokeFree) * 100}%` }}
                   title={`${m.name}: ${m.smokeFreeDays} smoke-free days`}
-                ></div>
+                />
                 <span className={styles.barLabel}>{m.name.charAt(0)}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
+
     </div>
   );
 }

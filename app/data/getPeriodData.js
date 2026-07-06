@@ -206,10 +206,12 @@ export function getPeriodData(month, year, raw = null) {
   const daysInMonth = daysIn(month, year);
   const { statuses, calendar, dayCounts } = resolveMonth(raw, month, year);
 
-  const totalCount = Object.values(dayCounts).reduce(
-    (sum, d) => sum + (Number(d.count) || 0),
-    0
-  );
+  // Prefer the backend's pre-summed month count when available (avoids re-summing)
+  const key = `${String(month + 1).padStart(2, "0")}-${year}`;
+  const backendMonthTotal = raw?.monthTotals?.[String(year)]?.[key]?.count;
+  const totalCount = backendMonthTotal !== undefined
+    ? backendMonthTotal
+    : Object.values(dayCounts).reduce((sum, d) => sum + (Number(d.count) || 0), 0);
 
   const stats = analyze(statuses, daysInMonth);
 

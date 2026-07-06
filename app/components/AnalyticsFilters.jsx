@@ -4,16 +4,16 @@ import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { useDashboard } from "../context/DashboardProvider";
 import { MONTHS } from "../utils/analytics.common";
 
-export default function AnalyticsFilter({ startYear = 2020 }) {
-  const { period, selectPeriod } = useDashboard();
+export default function AnalyticsFilter() {
+  const { period, selectPeriod, globalSummary } = useDashboard();
   const { month, year } = period;
 
-  // Build the year dropdown list from startYear up to 5 years from now.
-  const maxYear = new Date().getFullYear() + 5;
-  const years = Array.from(
-    { length: maxYear - startYear + 1 },
-    (_, i) => maxYear - i
-  );
+  // Use real years from the backend /summary response.
+  // Fall back to current year only if summary hasn't loaded yet.
+  const currentYear = new Date().getFullYear();
+  const years = Array.isArray(globalSummary?.years) && globalSummary.years.length > 0
+    ? [...globalSummary.years].map(Number).sort((a, b) => b - a) // descending
+    : [currentYear];
 
   const goToPreviousMonth = () => {
     selectPeriod(month === 0 ? { month: 11, year: year - 1 } : { month: month - 1, year });
