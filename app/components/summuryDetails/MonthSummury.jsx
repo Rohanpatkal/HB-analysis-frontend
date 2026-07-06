@@ -9,18 +9,19 @@ export default function MonthSummary() {
   const stats = data.summary;
 
   return (
-    <div className={styles.card}>
+    <section className={styles.card} aria-labelledby="month-summary-heading">
       <div className={styles.header}>
-        <h2>{monthName}</h2>
+        <h2 id="month-summary-heading">{monthName}</h2>
         <p>Your monthly recovery overview</p>
       </div>
 
-      <div className={styles.list}>
+      <ul className={styles.list} aria-label="Monthly recovery statistics">
         {stats.map((item) => (
-          <div key={item.title} className={styles.item}>
+          <li key={item.title} className={styles.item}>
             <div
               className={styles.icon}
               style={{ background: item.color }}
+              aria-hidden="true"
             >
               {item.icon}
             </div>
@@ -29,9 +30,9 @@ export default function MonthSummary() {
               <h3>{item.value}</h3>
               <span>{item.title}</span>
             </div>
-          </div>
+          </li>
         ))}
-      </div>
-    </div>
+      </ul>
+    </section>
   );
 }

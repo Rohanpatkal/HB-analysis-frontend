@@ -56,14 +56,14 @@ export default function Details() {
   const maxSmokeFree = Math.max(...yearData.months.map((m) => m.smokeFreeDays), 1);
 
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.wrapper} aria-label="Detailed analytics">
 
       {/* ── Global Summary (from backend /summary endpoint) ─────────────────── */}
       {globalSummary && (
-        <div className={styles.panel}>
+        <section className={styles.panel} aria-labelledby="global-summary-heading">
           <div className={styles.panelHead}>
             <div>
-              <h3>🌍 All-Time Summary</h3>
+              <h2 id="global-summary-heading" className={styles.panelTitle}>🌍 All-Time Summary</h2>
               <p>Across all {globalSummary.totalYears} year{globalSummary.totalYears !== 1 ? "s" : ""} of data</p>
             </div>
             <span className={`${styles.badge} ${styles.flat}`}>
@@ -103,14 +103,14 @@ export default function Details() {
               sub={`${globalSummary.monthMin.count.toLocaleString()} cigarettes`}
             />
           </div>
-        </div>
+        </section>
       )}
 
       {/* ── Monthly Details ───────────────────────────────────────────────────── */}
-      <div className={styles.panel}>
+      <section className={styles.panel} aria-labelledby="monthly-details-heading">
         <div className={styles.panelHead}>
           <div>
-            <h3>Monthly Details</h3>
+            <h2 id="monthly-details-heading" className={styles.panelTitle}>Monthly Details</h2>
             <p>{data.period.monthName}</p>
           </div>
           <TrendBadge delta={d.recoveryImprovement} />
@@ -126,13 +126,13 @@ export default function Details() {
           <Tile color="#0ea5e9" label="Current Streak"  value={`${d.currentStreak} days`} />
           <Tile color="#16a34a" label="Money Saved"     value={formatINR(d.moneySaved)} />
         </div>
-      </div>
+      </section>
 
       {/* ── Yearly Details ────────────────────────────────────────────────────── */}
-      <div className={styles.panel}>
+      <section className={styles.panel} aria-labelledby="yearly-details-heading">
         <div className={styles.panelHead}>
           <div>
-            <h3>Yearly Details</h3>
+            <h2 id="yearly-details-heading" className={styles.panelTitle}>Yearly Details</h2>
             <p>Overview for {period.year}</p>
           </div>
           <TrendBadge delta={yearData.improvement} />
@@ -166,7 +166,7 @@ export default function Details() {
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
     </div>
   );

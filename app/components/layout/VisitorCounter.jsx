@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import { useEffect, useState } from "react";
 import { fetchVisitorCount } from "../../../lib/api";
 
@@ -35,7 +33,12 @@ export default function VisitorCounter() {
   }
 
   return (
-    <div style={wrapStyle} title={`${today} unique visitor${today !== 1 ? "s" : ""} today`}>
+    <div
+      style={wrapStyle}
+      title={`${today} unique visitor${today !== 1 ? "s" : ""} today`}
+      aria-label={`${total?.toLocaleString()} total visitors, ${today} today`}
+      role="status"
+    >
       <span style={dotStyle("#10b981")} />
       <span style={labelStyle}>Visitors</span>
       <span style={countStyle}>{total.toLocaleString()}</span>

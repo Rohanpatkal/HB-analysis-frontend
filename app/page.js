@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 
 import { DashboardProvider, useDashboard } from "./context/DashboardProvider";
 import { useUser } from "./context/UserContext";
@@ -10,15 +11,33 @@ import { fetchAnalyticsData } from "../lib/api-client";
 import TopNav from "./components/layout/TopNav";
 import LoadingScreen from "./components/ui/LoadingScreen";
 import ErrorScreen from "./components/ui/ErrorScreen";
-import RecoveryHighlights from "./components/RecoveryHighlights/RecoveryHighlights";
-import AnalyticsFilters from "./components/AnalyticsFilters";
-import MonthSummary from "./components/summuryDetails/MonthSummury";
-import ContributionCalendar from "./components/ContributionCalendar";
-import Details from "./components/Details/Details";
-import LogHabitDrawer from "./components/LogHabit/LogHabitDrawer";
+
+// Lazy-load heavy sections to reduce initial bundle size.
+const RecoveryHighlights  = dynamic(() => import("./components/RecoveryHighlights/RecoveryHighlights"), { ssr: false });
+const AnalyticsFilters    = dynamic(() => import("./components/AnalyticsFilters"),                     { ssr: false });
+const MonthSummary        = dynamic(() => import("./components/summuryDetails/MonthSummury"),           { ssr: false });
+const ContributionCalendar = dynamic(() => import("./components/ContributionCalendar"),                 { ssr: false });
+const Details             = dynamic(() => import("./components/Details/Details"),                       { ssr: false });
+const LogHabitDrawer      = dynamic(() => import("./components/LogHabit/LogHabitDrawer"),               { ssr: false });
 
 import layoutStyles from "./components/layout/layout.module.css";
 import fabStyles from "./components/LogHabit/LogHabit.module.css";
+
+// JSON-LD for the dashboard (SoftwareApplication schema)
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "HabitBack",
+  applicationCategory: "HealthApplication",
+  operatingSystem: "Web",
+  description:
+    "A personal habit analytics dashboard for tracking smoking recovery journeys with smoke-free streaks, contribution calendars, and monthly summaries.",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "INR",
+  },
+};
 
 // DashboardContent is rendered inside DashboardProvider so it can read
 // loading/error from the context.
@@ -29,7 +48,7 @@ function DashboardContent({ onEditLog }) {
   if (error)   return <ErrorScreen message={error} onRetry={refresh} />;
 
   return (
-    <div className={layoutStyles.pageContent}>
+    <main className={layoutStyles.pageContent} id="main-content" aria-label="Recovery dashboard">
       <RecoveryHighlights />
       <AnalyticsFilters />
 
@@ -41,7 +60,7 @@ function DashboardContent({ onEditLog }) {
       </div>
 
       <Details />
-    </div>
+    </main>
   );
 }
 
@@ -49,8 +68,8 @@ function DashboardContent({ onEditLog }) {
 function Dashboard() {
   const { userId, ready } = useUser();
   const router = useRouter();
-  const [drawerOpen,   setDrawerOpen]   = useState(false);
-  const [editingLog,   setEditingLog]   = useState(null); // null = create mode, object = edit mode
+  const [drawerOpen,  setDrawerOpen]  = useState(false);
+  const [editingLog,  setEditingLog]  = useState(null); // null = create mode, object = edit mode
 
   // Wait for localStorage read before redirecting.
   if (!ready) return <LoadingScreen message="Starting up…" />;
@@ -85,6 +104,28 @@ function Dashboard() {
 
   return (
     <DashboardProvider fetcher={fetchAnalyticsData} userId={userId}>
+      {/* Skip-to-content link for keyboard/screen-reader users */}
+      <a
+        href="#main-content"
+        style={{
+          position: "absolute",
+          left: "-9999px",
+          top: "auto",
+          width: "1px",
+          height: "1px",
+          overflow: "hidden",
+        }}
+        className="focus:left-4 focus:top-4 focus:w-auto focus:h-auto focus:overflow-visible focus:z-50 focus:bg-white focus:px-4 focus:py-2 focus:rounded focus:shadow"
+      >
+        Skip to content
+      </a>
+
+      {/* JSON-LD structured data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <div style={{ minHeight: "100vh", background: "#f0f2f8" }}>
 
         <TopNav onLogHabit={handleOpenCreate} />
@@ -95,10 +136,12 @@ function Dashboard() {
         <button
           className={fabStyles.fab}
           onClick={handleOpenCreate}
-          aria-label="Log a habit"
+          type="button"
+          aria-label="Log a new habit entry"
           title="Log Habit"
         >
-          ✚
+          <span aria-hidden="true">✚</span>
+          <span className="sr-only">Log Habit</span>
         </button>
 
         {drawerOpen && (

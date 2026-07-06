@@ -237,28 +237,45 @@ export default function ContributionCalendar({ onEditLog }) {
   }
 
   return (
-    <div className="w-full bg-white rounded-3xl shadow-xl border p-4 sm:p-8">
+    <section className="w-full bg-white rounded-3xl shadow-xl border p-4 sm:p-8" aria-labelledby="calendar-heading">
 
       {/* Header */}
       <div className="flex justify-between items-center mb-6 sm:mb-8">
-        <button onClick={previousMonth} className="p-2 rounded-full hover:bg-gray-100" aria-label="Previous month">
-          <ChevronLeft />
+        <button
+          onClick={previousMonth}
+          type="button"
+          className="p-2 rounded-full hover:bg-gray-100"
+          aria-label="Previous month"
+        >
+          <ChevronLeft aria-hidden="true" />
         </button>
-        <h2 className="text-xl sm:text-3xl font-bold text-center">{monthName}</h2>
-        <button onClick={nextMonth} className="p-2 rounded-full hover:bg-gray-100" aria-label="Next month">
-          <ChevronRight />
+        <h2 id="calendar-heading" className="text-xl sm:text-3xl font-bold text-center">{monthName}</h2>
+        <button
+          onClick={nextMonth}
+          type="button"
+          className="p-2 rounded-full hover:bg-gray-100"
+          aria-label="Next month"
+        >
+          <ChevronRight aria-hidden="true" />
         </button>
       </div>
 
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 mb-3 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-slate-400">
+      <div
+        className="grid grid-cols-7 mb-3 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-wide text-slate-400"
+        aria-hidden="true"
+      >
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
           <div key={d}>{d}</div>
         ))}
       </div>
 
       {/* Day grid */}
-      <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5">
+      <div
+        className="grid grid-cols-7 gap-1.5 sm:gap-2.5"
+        role="grid"
+        aria-label={`${monthName} habit calendar`}
+      >
         {days.map((item, index) => {
           if (!item) return <div key={index} />;
 
@@ -317,7 +334,11 @@ export default function ContributionCalendar({ onEditLog }) {
       <DayDetail day={selectedDay} onClose={() => setSelectedDay(null)} onEdit={onEditLog} />
 
       {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 sm:gap-6 mt-6 sm:mt-8 border-t border-slate-100 pt-5">
+      <div
+        className="flex flex-wrap items-center gap-4 sm:gap-6 mt-6 sm:mt-8 border-t border-slate-100 pt-5"
+        aria-label="Calendar legend"
+        role="list"
+      >
         <Legend color="bg-blue-400"    text="Today"      ring />
         <Legend color="bg-emerald-500" text="Smoke Free" />
         <Legend color="bg-amber-500"   text="Reduced"    />
@@ -330,7 +351,7 @@ export default function ContributionCalendar({ onEditLog }) {
         </span>
       </div>
 
-    </div>
+    </section>
   );
 }
 

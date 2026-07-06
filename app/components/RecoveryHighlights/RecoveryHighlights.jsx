@@ -29,12 +29,12 @@ export default function RecoveryHighlights() {
   }, []);
 
   return (
-    <section className={styles.hero}>
-      <div className={styles.glow}></div>
+    <section className={styles.hero} aria-labelledby="recovery-highlights-heading">
+      <div className={styles.glow} aria-hidden="true"></div>
 
       <div className={styles.header}>
         <div>
-          <h2>🏆 Recovery Highlights</h2>
+          <h2 id="recovery-highlights-heading">🏆 Recovery Highlights</h2>
           <p>{monthName ? `${monthName} overview` : "Your recovery journey"}</p>
         </div>
 
