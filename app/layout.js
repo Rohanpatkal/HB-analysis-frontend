@@ -66,6 +66,9 @@ export const metadata = {
     apple: "/apple-touch-icon.png",
   },
   manifest: "/manifest.json",
+  verification: {
+    google: "google890085bba37a9fce",
+  },
 };
 
 // viewport and themeColor must be in a separate export in Next.js 15+
