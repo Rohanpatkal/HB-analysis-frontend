@@ -54,7 +54,7 @@ export default function RecoveryHighlights() {
         <div className={styles.progress}>
           <div
             className={styles.progressFill}
-            style={{ width: `${nextBadgePercent}%` }}
+            style={{ "--progress-width": `${nextBadgePercent}%` }}
           ></div>
         </div>
 

@@ -133,7 +133,13 @@ export default function ContributionCalendar() {
             <button
               key={index}
               disabled={item.isFuture}
-              onClick={() => !item.isFuture && alert(item.fullDate)}
+              onClick={() => {
+                if (!item.isFuture) {
+                  // TODO: open day detail panel
+                  // For now we log to console — replace with a proper modal
+                  console.log("Day selected:", item.fullDate, item);
+                }
+              }}
               title={item.isToday ? "Today" : item.fullDate}
               className={[
                 "relative flex min-h-[60px] sm:min-h-[94px] flex-col",

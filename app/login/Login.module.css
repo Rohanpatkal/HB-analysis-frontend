@@ -1,0 +1,158 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f2f8;
+  padding: 24px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 28px;
+  padding: 40px 36px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+  border: 1px solid #edf2f7;
+}
+
+.brand {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.brandIcon {
+  font-size: 2.4rem;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.brand h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.brand p {
+  font-size: 0.88rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.tabs {
+  display: flex;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 28px;
+}
+
+.tab,
+.tabActive {
+  flex: 1;
+  padding: 9px;
+  border: none;
+  border-radius: 9px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tab {
+  background: transparent;
+  color: #64748b;
+}
+
+.tabActive {
+  background: #ffffff;
+  color: #10b981;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.field input {
+  padding: 12px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  color: #0f172a;
+  background: #fff;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.field input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.error {
+  font-size: 0.85rem;
+  color: #ef4444;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 0;
+}
+
+.submitBtn {
+  width: 100%;
+  padding: 14px;
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: #059669;
+}
+
+.submitBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
