@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useUser } from "../../context/UserContext";
 import { useDashboard } from "../../context/DashboardProvider";
-import { addHabitLog } from "../../../lib/api";
+import { addHabitLog, editHabitLog } from "../../../lib/api";
 import DateSelector from "./DateSelector";
 import QuickCountChips from "./QuickCountChips";
 import NumberPicker from "./NumberPicker";
@@ -16,18 +16,28 @@ function todayStr() {
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
 }
 
-export default function LogHabitDrawer({ onClose }) {
+/**
+ * LogHabitDrawer — handles both creating and editing a habit log.
+ *
+ * Props:
+ *   onClose       — called when the drawer should close
+ *   existingLog   — when present, opens in edit mode:
+ *                   { id, date, count, breakCount, mood, notesRaw }
+ */
+export default function LogHabitDrawer({ onClose, existingLog }) {
   const { userId } = useUser();
   const { refresh } = useDashboard();
 
-  // Form fields
-  const [date,       setDate]       = useState(todayStr());
-  const [count,      setCount]      = useState(0);
-  const [breakCount, setBreakCount] = useState(0);
-  const [mood,       setMood]       = useState("");
-  const [notes,      setNotes]      = useState("");
+  const isEditMode = Boolean(existingLog?.id);
 
-  // Submit state — successAction holds "created" | "updated" | ""
+  // Form fields — seeded from existingLog when editing
+  const [date,       setDate]       = useState(existingLog?.date       ?? todayStr());
+  const [count,      setCount]      = useState(existingLog?.count      ?? 0);
+  const [breakCount, setBreakCount] = useState(existingLog?.breakCount ?? 0);
+  const [mood,       setMood]       = useState(existingLog?.mood       ?? "");
+  const [notes,      setNotes]      = useState(existingLog?.notesRaw   ?? "");
+
+  // Submit state — successAction holds "created" | "updated" | "edited" | ""
   const [saving,        setSaving]        = useState(false);
   const [successAction, setSuccessAction] = useState("");
   const [error,         setError]         = useState("");
@@ -49,7 +59,6 @@ export default function LogHabitDrawer({ onClose }) {
 
   async function handleSave() {
     if (!userId) { setError("You are not logged in."); return; }
-    // count can be 0 when the user is only logging a habit break (hbCount)
     if (count < 0) { setError("Count cannot be negative."); return; }
 
     setSaving(true);
@@ -57,17 +66,21 @@ export default function LogHabitDrawer({ onClose }) {
     setSuccessAction("");
 
     try {
-      // POST /api/log/:userId
-      const res = await addHabitLog(userId, { date, count, breakCount, mood, notes });
+      if (isEditMode) {
+        // PUT /api/log/:userId/:logId — replace fields with exact values
+        await editHabitLog(userId, existingLog.id, { count, breakCount, mood, notes });
+        setSuccessAction("edited");
+      } else {
+        // POST /api/log/:userId — create or upsert
+        const res = await addHabitLog(userId, { date, count, breakCount, mood, notes });
+        setSuccessAction(res.action || "created");
+      }
 
-      // Backend returns action: "created" or "updated"
-      setSuccessAction(res.action || "created");
-
-      // Refresh dashboard so calendar and stats reflect the new log instantly
+      // Refresh dashboard so calendar and stats reflect the change instantly
       refresh();
 
-      // Reset form, then close after 1.4 s so user can read the success message
-      resetForm();
+      if (!isEditMode) resetForm();
+
       setTimeout(() => {
         setSuccessAction("");
         onClose();
@@ -82,9 +95,15 @@ export default function LogHabitDrawer({ onClose }) {
 
   const isSuccess = Boolean(successAction);
 
-  const successLabel = successAction === "updated"
-    ? "✓ Entry updated!"
-    : "✓ Entry created!";
+  const successLabel =
+    successAction === "edited"   ? "✓ Entry updated!"  :
+    successAction === "updated"  ? "✓ Entry updated!"  :
+                                   "✓ Entry created!";
+
+  const headerTitle    = isEditMode ? "✏️ Edit Log" : "🚬 Log Habit";
+  const headerSubtitle = isEditMode
+    ? `Editing entry for ${existingLog.date}`
+    : "Record your activity in just a few seconds.";
 
   return (
     <>
@@ -92,7 +111,7 @@ export default function LogHabitDrawer({ onClose }) {
       <div className={styles.overlay} onClick={onClose} />
 
       {/* Drawer (desktop right-side) / bottom sheet (mobile) */}
-      <div className={styles.drawer} role="dialog" aria-modal="true" aria-label="Log Habit">
+      <div className={styles.drawer} role="dialog" aria-modal="true" aria-label={isEditMode ? "Edit Log" : "Log Habit"}>
 
         {/* Mobile drag handle */}
         <div className={styles.handle}><span /></div>
@@ -100,8 +119,8 @@ export default function LogHabitDrawer({ onClose }) {
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.headerText}>
-            <h2>🚬 Log Habit</h2>
-            <p>Record your activity in just a few seconds.</p>
+            <h2>{headerTitle}</h2>
+            <p>{headerSubtitle}</p>
           </div>
           <button
             className={styles.closeBtn}
@@ -116,8 +135,21 @@ export default function LogHabitDrawer({ onClose }) {
         {/* Scrollable body */}
         <div className={styles.body}>
 
-          {/* 1. Date picker */}
-          <DateSelector value={date} onChange={setDate} />
+          {/* 1. Date picker — read-only when editing (date can't change, use POST for that) */}
+          {isEditMode ? (
+            <div className={styles.section}>
+              <div className={styles.sectionLabel}>📅 Date</div>
+              <div className={styles.dateDisplay}>
+                <span>📅</span>
+                <span>{existingLog.date}</span>
+              </div>
+              <p style={{ fontSize: "0.75rem", color: "#94a3b8", margin: 0 }}>
+                To log a different date, use the "Log Habit" button instead.
+              </p>
+            </div>
+          ) : (
+            <DateSelector value={date} onChange={setDate} />
+          )}
 
           {/* 2. Count — quick chips + scroll picker */}
           <div className={styles.section}>
@@ -134,7 +166,7 @@ export default function LogHabitDrawer({ onClose }) {
           />
 
           {/* 4. Live summary */}
-          <LiveSummary date={date} count={count} breakCount={breakCount} mood={mood} />
+          <LiveSummary date={isEditMode ? existingLog.date : date} count={count} breakCount={breakCount} mood={mood} />
 
           {/* Inline error */}
           {error && (
@@ -158,7 +190,7 @@ export default function LogHabitDrawer({ onClose }) {
           >
             {saving    && <span className={styles.spinner} />}
             {isSuccess && <span className={styles.successPop}>{successLabel}</span>}
-            {!saving && !isSuccess && "Save Habit"}
+            {!saving && !isSuccess && (isEditMode ? "Update Entry" : "Save Habit")}
           </button>
         </div>
 

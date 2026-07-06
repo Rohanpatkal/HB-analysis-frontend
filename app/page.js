@@ -22,7 +22,7 @@ import fabStyles from "./components/LogHabit/LogHabit.module.css";
 
 // DashboardContent is rendered inside DashboardProvider so it can read
 // loading/error from the context.
-function DashboardContent({ onLogHabit }) {
+function DashboardContent({ onEditLog }) {
   const { loading, error, refresh } = useDashboard();
 
   if (loading) return <LoadingScreen message="Loading your recovery data…" />;
@@ -37,7 +37,7 @@ function DashboardContent({ onLogHabit }) {
         <div className="lg:sticky lg:top-20">
           <MonthSummary />
         </div>
-        <ContributionCalendar />
+        <ContributionCalendar onEditLog={onEditLog} />
       </div>
 
       <Details />
@@ -49,7 +49,8 @@ function DashboardContent({ onLogHabit }) {
 function Dashboard() {
   const { userId, ready } = useUser();
   const router = useRouter();
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerOpen,   setDrawerOpen]   = useState(false);
+  const [editingLog,   setEditingLog]   = useState(null); // null = create mode, object = edit mode
 
   // Wait for localStorage read before redirecting.
   if (!ready) return <LoadingScreen message="Starting up…" />;
@@ -59,18 +60,41 @@ function Dashboard() {
     return null;
   }
 
+  function handleOpenCreate() {
+    setEditingLog(null);
+    setDrawerOpen(true);
+  }
+
+  function handleOpenEdit(dayItem) {
+    // dayItem comes from ContributionCalendar's DayDetail panel
+    setEditingLog({
+      id:         dayItem.id,
+      date:       dayItem.fullDate,
+      count:      dayItem.count,
+      breakCount: dayItem.breakCount,
+      mood:       dayItem.mood,
+      notesRaw:   dayItem.notesRaw,
+    });
+    setDrawerOpen(true);
+  }
+
+  function handleClose() {
+    setDrawerOpen(false);
+    setEditingLog(null);
+  }
+
   return (
     <DashboardProvider fetcher={fetchAnalyticsData} userId={userId}>
       <div style={{ minHeight: "100vh", background: "#f0f2f8" }}>
 
-        <TopNav onLogHabit={() => setDrawerOpen(true)} />
+        <TopNav onLogHabit={handleOpenCreate} />
 
-        <DashboardContent onLogHabit={() => setDrawerOpen(true)} />
+        <DashboardContent onEditLog={handleOpenEdit} />
 
         {/* FAB — visible on mobile as an alternative to nav button */}
         <button
           className={fabStyles.fab}
-          onClick={() => setDrawerOpen(true)}
+          onClick={handleOpenCreate}
           aria-label="Log a habit"
           title="Log Habit"
         >
@@ -78,7 +102,10 @@ function Dashboard() {
         </button>
 
         {drawerOpen && (
-          <LogHabitDrawer onClose={() => setDrawerOpen(false)} />
+          <LogHabitDrawer
+            onClose={handleClose}
+            existingLog={editingLog}
+          />
         )}
 
       </div>

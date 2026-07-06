@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Pencil } from "lucide-react";
 import { useDashboard } from "../context/DashboardProvider";
 import { isoFor } from "../utils/analytics.common";
 
@@ -52,7 +52,7 @@ function formatFullDate(iso) {
 }
 
 // ─── Day detail panel ─────────────────────────────────────────────────────────
-function DayDetail({ day, onClose }) {
+function DayDetail({ day, onClose, onEdit }) {
   if (!day) return null;
 
   const hasSmoking  = day.count > 0;
@@ -60,6 +60,7 @@ function DayDetail({ day, onClose }) {
   const hasMood     = Boolean(day.mood);
   const hasNotes    = Boolean(day.notes?.trim());
   const hasActivity = hasSmoking || hasBreak || hasMood || hasNotes;
+  const canEdit     = Boolean(day.id) && !day.isFuture;
 
   return (
     <div style={{
@@ -91,13 +92,34 @@ function DayDetail({ day, onClose }) {
           </div>
         </div>
 
-        <button
-          onClick={onClose}
-          style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", flexShrink: 0 }}
-          aria-label="Close day detail"
-        >
-          <X size={16} />
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+          {/* Edit button — only shown when the log exists in the DB */}
+          {canEdit && (
+            <button
+              onClick={() => onEdit(day)}
+              style={{
+                background: "#fff", border: "1px solid #e2e8f0", borderRadius: "50%",
+                width: "32px", height: "32px", cursor: "pointer", display: "flex",
+                alignItems: "center", justifyContent: "center", color: "#64748b",
+                transition: "background 0.15s, color 0.15s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#eff6ff"; e.currentTarget.style.color = "#2563eb"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#64748b"; }}
+              aria-label="Edit this log entry"
+              title="Edit entry"
+            >
+              <Pencil size={15} />
+            </button>
+          )}
+
+          <button
+            onClick={onClose}
+            style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", flexShrink: 0 }}
+            aria-label="Close day detail"
+          >
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Stats grid — only shown when there's actual data */}
@@ -148,7 +170,7 @@ function StatTile({ icon, label, value }) {
 }
 
 // ─── Main calendar component ──────────────────────────────────────────────────
-export default function ContributionCalendar() {
+export default function ContributionCalendar({ onEditLog }) {
   const { period, selectPeriod, data } = useDashboard();
   const { month, year } = period;
   const calendarData = data.calendar;
@@ -185,11 +207,13 @@ export default function ContributionCalendar() {
         isToday,
         isFuture,
         status:     isFuture ? "future" : (calendarData[fullDate] || "empty"),
-        count:      isFuture ? 0 : (counts.count      ?? 0),
+        id:         isFuture ? null  : (counts.id         ?? null),
+        count:      isFuture ? 0     : (counts.count      ?? 0),
         // breakCount is the field from the API; keep hbCount as an alias for the chip display
-        breakCount: isFuture ? 0 : (counts.breakCount ?? counts.hbCount ?? 0),
-        mood:       isFuture ? "" : (counts.mood       ?? ""),
-        notes:      isFuture ? "" : (counts.notes      ?? ""),
+        breakCount: isFuture ? 0     : (counts.breakCount ?? counts.hbCount ?? 0),
+        mood:       isFuture ? ""    : (counts.mood       ?? ""),
+        notes:      isFuture ? ""    : (counts.notes      ?? ""),
+        notesRaw:   isFuture ? ""    : (counts.notesRaw   ?? ""),
       });
     }
     return calendar;
@@ -290,7 +314,7 @@ export default function ContributionCalendar() {
       </div>
 
       {/* Day detail panel — slides in below the grid on click */}
-      <DayDetail day={selectedDay} onClose={() => setSelectedDay(null)} />
+      <DayDetail day={selectedDay} onClose={() => setSelectedDay(null)} onEdit={onEditLog} />
 
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-4 sm:gap-6 mt-6 sm:mt-8 border-t border-slate-100 pt-5">

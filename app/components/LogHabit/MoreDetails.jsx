@@ -5,8 +5,9 @@ import MoodSelector from "./MoodSelector";
 import NumberPicker from "./NumberPicker";
 import styles from "./LogHabit.module.css";
 
-export default function MoreDetails({ mood, onMoodChange, breakCount, onBreakCountChange, notes, onNotesChange }) {
-  const [open, setOpen] = useState(false);
+export default function MoreDetails({ mood, onMoodChange, breakCount, onBreakCountChange, notes, onNotesChange, defaultOpen }) {
+  // Auto-open when any of the optional fields already have values (edit mode)
+  const [open, setOpen] = useState(defaultOpen ?? Boolean(mood || breakCount || notes));
 
   return (
     <div>

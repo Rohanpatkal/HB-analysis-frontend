@@ -76,7 +76,7 @@ function buildMonthFromApi(raw, month, year) {
   const dayCounts = {};
   const countByDay = {};
   for (let day = 1; day <= daysInMonth; day++) {
-    dayCounts[isoFor(year, month, day)] = { count: 0, hbCount: 0, breakCount: 0, mood: "", notes: "" };
+    dayCounts[isoFor(year, month, day)] = { id: null, count: 0, hbCount: 0, breakCount: 0, mood: "", notes: "", notesRaw: "" };
     countByDay[day] = 0;
   }
 
@@ -87,11 +87,13 @@ function buildMonthFromApi(raw, month, year) {
     const count = Number(row.count) || 0;
     countByDay[day] = count;
     dayCounts[isoFor(year, month, day)] = {
+      id:         row.id         ?? null,
       count,
       hbCount:    Number(row.hbCount)    || 0,
       breakCount: Number(row.breakCount) || 0,
       mood:       row.mood               || "",
       notes:      row.notes              || "",
+      notesRaw:   row.notesRaw           || "",
     };
   }
 
@@ -140,7 +142,7 @@ function buildCountsFromMap(month, year, daysInMonth, source) {
   const dayCounts = {};
   for (let day = 1; day <= daysInMonth; day++) {
     const iso = isoFor(year, month, day);
-    dayCounts[iso] = source?.[iso] ?? { count: 0, hbCount: 0, breakCount: 0, mood: "", notes: "" };
+    dayCounts[iso] = source?.[iso] ?? { id: null, count: 0, hbCount: 0, breakCount: 0, mood: "", notes: "", notesRaw: "" };
   }
   return dayCounts;
 }
