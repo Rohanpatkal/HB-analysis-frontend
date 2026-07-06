@@ -107,11 +107,11 @@
 }
 
 .progressFill {
-    width: 82%;
+    width: var(--progress-width, 0%);
     height: 100%;
     border-radius: 30px;
     background: linear-gradient(90deg, #22c55e, #4ade80);
-    animation: fill 2s ease;
+    transition: width 1.2s ease;
 }
 
 .progressSection small {
@@ -126,16 +126,6 @@
     border-radius: 18px;
     background: rgba(255, 255, 255, .08);
     border: 1px solid rgba(255, 255, 255, .12);
-}
-
-@keyframes fill {
-    from {
-        width: 0
-    }
-
-    to {
-        width: 82%
-    }
 }
 
 @keyframes pulse {

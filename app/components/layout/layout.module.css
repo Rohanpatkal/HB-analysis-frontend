@@ -1,0 +1,106 @@
+/* App shell layout styles */
+
+/* ── Top navigation bar ───────────────────────────────────── */
+.topNav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+}
+
+/* ── Brand ────────────────────────────────────────────────── */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.brandLogo {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.brandName {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.3px;
+}
+
+/* ── Nav actions ──────────────────────────────────────────── */
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.logBtn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.signOutBtn {
+  padding: 8px 16px;
+  background: transparent;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.signOutBtn:hover {
+  border-color: #cbd5e1;
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+/* ── Page content area ────────────────────────────────────── */
+.pageContent {
+  padding: 28px 24px 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .topNav {
+    padding: 0 16px;
+  }
+
+  .logBtn span:first-child {
+    display: none; /* hide the ✚ icon text on mobile, keep label */
+  }
+
+  .pageContent {
+    padding: 20px 16px 80px; /* extra bottom for the FAB */
+  }
+}
