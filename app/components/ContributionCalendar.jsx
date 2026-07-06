@@ -186,8 +186,8 @@ export default function ContributionCalendar() {
         isFuture,
         status:     isFuture ? "future" : (calendarData[fullDate] || "empty"),
         count:      isFuture ? 0 : (counts.count      ?? 0),
-        hbCount:    isFuture ? 0 : (counts.hbCount    ?? 0),
-        breakCount: isFuture ? 0 : (counts.breakCount ?? 0),
+        // breakCount is the field from the API; keep hbCount as an alias for the chip display
+        breakCount: isFuture ? 0 : (counts.breakCount ?? counts.hbCount ?? 0),
         mood:       isFuture ? "" : (counts.mood       ?? ""),
         notes:      isFuture ? "" : (counts.notes      ?? ""),
       });
@@ -241,7 +241,7 @@ export default function ContributionCalendar() {
           const s          = statusStyles[item.status] ?? statusStyles.empty;
           const isSelected = selectedDay?.fullDate === item.fullDate;
           const showCount  = !item.isFuture && item.count > 0;
-          const showHb     = !item.isFuture && item.hbCount >= 1;
+          const showHb     = !item.isFuture && item.breakCount >= 1;
 
           return (
             <button
@@ -279,7 +279,7 @@ export default function ContributionCalendar() {
                   )}
                   {showHb && (
                     <span className="inline-flex items-center gap-0.5 rounded-md bg-white px-1.5 py-0.5 text-[9px] sm:text-[11px] font-bold leading-none text-slate-600 ring-1 ring-black/5">
-                      🔥 {item.hbCount}
+                      🔥 {item.breakCount}
                     </span>
                   )}
                 </span>

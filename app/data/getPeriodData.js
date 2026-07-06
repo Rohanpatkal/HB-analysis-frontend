@@ -109,6 +109,9 @@ function buildMonthFromApi(raw, month, year) {
     } else if (countByDay[day] > 0) {
       status = "red";
       yellowUntil = day + AFFECTED_DAYS;
+    } else if ((dayCounts[iso]?.breakCount ?? 0) > 0) {
+      // A day with only a habit-break count (no cigarettes) is yellow.
+      status = "yellow";
     } else {
       status = day <= yellowUntil ? "yellow" : "green";
     }
