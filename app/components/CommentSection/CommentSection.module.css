@@ -1,0 +1,325 @@
+/* ── Section wrapper ─────────────────────────────────────────────────────── */
+.section {
+  background: #fff;
+  border-radius: 28px;
+  border: 1px solid #edf2f7;
+  box-shadow: 0 12px 35px rgba(15, 23, 42, 0.06);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Heading ─────────────────────────────────────────────────────────────── */
+.heading h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.heading p {
+  margin-top: 4px;
+  font-size: 0.88rem;
+  color: #64748b;
+}
+
+.count {
+  background: #f1f5f9;
+  color: #475569;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* ── Compose box ─────────────────────────────────────────────────────────── */
+.compose {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.composeAvatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-top: 2px;
+}
+
+.composeRight {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #0f172a;
+  background: #f8fafc;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  line-height: 1.5;
+  min-height: 80px;
+}
+
+.textarea:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  background: #fff;
+}
+
+.textarea::placeholder {
+  color: #cbd5e1;
+}
+
+.composeFooter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.charCount {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-right: auto;
+}
+
+.postError {
+  font-size: 0.78rem;
+  color: #ef4444;
+}
+
+.postBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.postBtn:hover:not(:disabled) {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.postBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── Comment list ─────────────────────────────────────────────────────────── */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Comment card ─────────────────────────────────────────────────────────── */
+.card {
+  display: flex;
+  gap: 14px;
+  padding: 18px;
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+  border-radius: 18px;
+  transition: box-shadow 0.2s;
+}
+
+.card:hover {
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.cardBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.cardName {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #0f172a;
+}
+
+.cardTime {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.deleteBtn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  opacity: 0.5;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.deleteBtn:hover {
+  opacity: 1;
+  background: #fee2e2;
+}
+
+.cardText {
+  font-size: 0.9rem;
+  color: #334155;
+  line-height: 1.6;
+  word-break: break-word;
+  margin: 0 0 10px;
+  white-space: pre-wrap;
+}
+
+/* ── Like button ─────────────────────────────────────────────────────────── */
+.likeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.likeBtn:hover {
+  border-color: #fca5a5;
+  background: #fff1f2;
+  color: #e11d48;
+}
+
+.likeBtnActive {
+  border-color: #fca5a5;
+  background: #fff1f2;
+  color: #e11d48;
+}
+
+.likeBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ── Empty / loading state ───────────────────────────────────────────────── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 20px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.retryBtn {
+  padding: 7px 18px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #475569;
+  transition: background 0.15s;
+}
+
+.retryBtn:hover {
+  background: #f1f5f9;
+}
+
+/* ── Spinner ─────────────────────────────────────────────────────────────── */
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Loading dots ────────────────────────────────────────────────────────── */
+.loadingDots::after {
+  content: "…";
+  animation: dots 1.2s steps(3, end) infinite;
+}
+
+@keyframes dots {
+  0%   { content: "."; }
+  33%  { content: ".."; }
+  66%  { content: "..."; }
+  100% { content: "."; }
+}
+
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .section {
+    padding: 20px 16px;
+  }
+
+  .compose {
+    gap: 10px;
+  }
+
+  .composeAvatar {
+    width: 34px;
+    height: 34px;
+    font-size: 0.75rem;
+  }
+}

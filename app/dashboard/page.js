@@ -19,6 +19,7 @@ const MonthSummary         = dynamic(() => import("../components/summuryDetails/
 const ContributionCalendar = dynamic(() => import("../components/ContributionCalendar"),                   { ssr: false });
 const Details              = dynamic(() => import("../components/Details/Details"),                        { ssr: false });
 const LogHabitDrawer       = dynamic(() => import("../components/LogHabit/LogHabitDrawer"),                { ssr: false });
+const CommentSection       = dynamic(() => import("../components/CommentSection/CommentSection"),          { ssr: false });
 
 import layoutStyles from "../components/layout/layout.module.css";
 import fabStyles from "../components/LogHabit/LogHabit.module.css";
@@ -52,6 +53,7 @@ function DashboardContent({ onEditLog }) {
         <ContributionCalendar onEditLog={onEditLog} />
       </div>
       <Details />
+      <CommentSection />
     </main>
   );
 }
