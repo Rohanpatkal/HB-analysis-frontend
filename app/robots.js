@@ -2,7 +2,7 @@
 // Controls which pages crawlers index.
 // /dashboard is auth-gated — crawlers see a redirect to /login, not content.
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hb-analysis-frontend.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://habitpilot.vercel.app";
 
 export default function robots() {
   return {

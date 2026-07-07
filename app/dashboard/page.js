@@ -27,7 +27,7 @@ import fabStyles from "../components/LogHabit/LogHabit.module.css";
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "HabitBack",
+  name: "HabitPilot",
   applicationCategory: "HealthApplication",
   operatingSystem: "Web",
   description:

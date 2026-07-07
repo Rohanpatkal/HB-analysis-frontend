@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export const metadata = {
   title: "Page Not Found — 404",
-  description: "The page you are looking for does not exist. Return to the HabitBack bad habit tracker dashboard.",
+  description: "The page you are looking for does not exist. Return to the HabitPilot bad habit tracker dashboard.",
   robots: { index: false, follow: false },
   alternates: { canonical: null },
 };

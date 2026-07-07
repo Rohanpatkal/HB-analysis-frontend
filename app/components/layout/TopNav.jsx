@@ -17,9 +17,9 @@ export default function TopNav({ onLogHabit }) {
   return (
     <header className={styles.topNav}>
       {/* Brand */}
-      <div className={styles.brand} aria-label="HabitBack home">
+      <div className={styles.brand} aria-label="HabitPilot home">
         <span className={styles.brandLogo} aria-hidden="true">🌿</span>
-        <span className={styles.brandName}>HabitBack</span>
+        <span className={styles.brandName}>HabitPilot</span>
       </div>
 
       {/* Navigation actions */}
@@ -43,7 +43,7 @@ export default function TopNav({ onLogHabit }) {
           className={styles.signOutBtn}
           onClick={handleSignOut}
           type="button"
-          aria-label="Sign out of HabitBack"
+          aria-label="Sign out of HabitPilot"
         >
           Sign Out
         </button>

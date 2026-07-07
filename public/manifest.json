@@ -1,7 +1,7 @@
 {
-  "name": "HabitBack — Habit Analytics Dashboard",
-  "short_name": "HabitBack",
-  "description": "Track your smoking recovery journey with daily habit logging and analytics.",
+  "name": "HabitPilot — Bad Habit Tracker & Recovery Analytics",
+  "short_name": "HabitPilot",
+  "description": "Free bad habit tracker and addiction recovery dashboard. Track habit streaks and quit bad habits.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f0f2f8",

@@ -2,23 +2,19 @@
 import "./globals.css";
 import { UserProvider } from "./context/UserContext";
 
-// Single source of truth for the canonical URL — must match deployed domain
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hb-analysis-frontend.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://habitpilot.vercel.app";
 
 export const metadata = {
-  // metadataBase resolves all relative URLs in OG images, canonical, etc.
   metadataBase: new URL(APP_URL),
 
   title: {
-    default: "HabitBack — Bad Habit Tracker & Recovery Analytics",
-    // Child pages get: "Sign In | HabitBack — Bad Habit Tracker"
-    template: "%s | HabitBack — Habit Tracker",
+    default: "HabitPilot — Bad Habit Tracker & Recovery Analytics",
+    template: "%s | HabitPilot",
   },
 
   description:
-    "HabitBack is a free bad habit tracker and addiction recovery dashboard. Track smoking habits, monitor habit streaks, log daily progress, and visualise your recovery with analytics.",
+    "HabitPilot is a free bad habit tracker and addiction recovery dashboard. Track smoking habits, monitor habit streaks, log daily progress, and visualise your recovery with analytics.",
 
-  // Broader keyword set covering all 8 target terms
   keywords: [
     "bad habit tracker",
     "habit tracker",
@@ -34,13 +30,13 @@ export const metadata = {
     "daily habit log",
     "recovery dashboard",
     "cigarette tracker",
+    "HabitPilot",
   ],
 
-  authors: [{ name: "HabitBack", url: APP_URL }],
-  creator: "HabitBack",
-  publisher: "HabitBack",
+  authors: [{ name: "HabitPilot", url: APP_URL }],
+  creator: "HabitPilot",
+  publisher: "HabitPilot",
 
-  // Default canonical — child pages should override with their own path
   alternates: {
     canonical: APP_URL,
   },
@@ -61,8 +57,8 @@ export const metadata = {
     type: "website",
     locale: "en_IN",
     url: APP_URL,
-    siteName: "HabitBack",
-    title: "HabitBack — Bad Habit Tracker & Recovery Analytics",
+    siteName: "HabitPilot",
+    title: "HabitPilot — Bad Habit Tracker & Recovery Analytics",
     description:
       "Free bad habit tracker and addiction recovery dashboard. Monitor habit streaks, log daily habits, and visualise your recovery progress.",
     images: [
@@ -70,19 +66,19 @@ export const metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "HabitBack — Bad Habit Tracker & Recovery Analytics Dashboard",
+        alt: "HabitPilot — Bad Habit Tracker & Recovery Analytics Dashboard",
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "HabitBack — Bad Habit Tracker & Recovery Analytics",
+    title: "HabitPilot — Bad Habit Tracker & Recovery Analytics",
     description:
       "Free bad habit tracker and addiction recovery dashboard. Monitor habit streaks and log daily habits.",
     images: ["/og-image.png"],
-    creator: "@habitback",
-    site: "@habitback",
+    creator: "@habitpilot",
+    site: "@habitpilot",
   },
 
   icons: {
@@ -93,16 +89,13 @@ export const metadata = {
 
   manifest: "/manifest.json",
 
-  // Google Search Console ownership verification
   verification: {
     google: "google890085bba37a9fce",
   },
 
-  // Category hint for search engines
   category: "health",
 };
 
-// viewport and themeColor MUST be a separate export (Next.js 15+ requirement)
 export const viewport = {
   width: "device-width",
   initialScale: 1,

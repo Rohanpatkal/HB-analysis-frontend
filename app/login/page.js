@@ -3,23 +3,22 @@
 
 import LoginForm from "./LoginForm";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hb-analysis-frontend.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://habitpilot.vercel.app";
 
 export const metadata = {
-  // "Sign In" fills the %s slot → "Sign In | HabitBack — Habit Tracker"
   title: "Sign In or Register Free",
 
   description:
-    "Sign in to HabitBack — the free bad habit tracker. Log daily habits, monitor your habit streak, and track your addiction recovery progress.",
+    "Sign in to HabitPilot — the free bad habit tracker. Log daily habits, monitor your habit streak, and track your addiction recovery progress.",
 
   keywords: [
-    "habit tracker login",
-    "bad habit tracker sign in",
-    "recovery tracker app",
+    "HabitPilot login",
+    "habit tracker sign in",
+    "bad habit tracker app",
+    "recovery tracker login",
     "quit bad habits free",
   ],
 
-  // Canonical prevents the login page from competing with the homepage
   alternates: {
     canonical: `${APP_URL}/login`,
   },
@@ -30,9 +29,9 @@ export const metadata = {
   },
 
   openGraph: {
-    title: "Sign In to HabitBack — Bad Habit Tracker",
+    title: "Sign In to HabitPilot — Bad Habit Tracker",
     description:
-      "Sign in or create a free account to start tracking your bad habits and addiction recovery journey.",
+      "Sign in or create a free account to start tracking your bad habits and addiction recovery journey with HabitPilot.",
     type: "website",
     url: `${APP_URL}/login`,
     images: [
@@ -40,16 +39,16 @@ export const metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "HabitBack — Bad Habit Tracker Sign In",
+        alt: "HabitPilot — Bad Habit Tracker Sign In",
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "Sign In to HabitBack — Bad Habit Tracker",
+    title: "Sign In to HabitPilot — Bad Habit Tracker",
     description:
-      "Sign in or create a free account to start tracking bad habits and monitor your recovery.",
+      "Sign in or create a free account to start tracking bad habits and monitor your recovery with HabitPilot.",
     images: ["/og-image.png"],
   },
 };

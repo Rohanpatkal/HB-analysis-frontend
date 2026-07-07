@@ -2,16 +2,14 @@
 import Link from "next/link";
 import styles from "./landing.module.css";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hb-analysis-frontend.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://habitpilot.vercel.app";
 
-// ─── SEO Metadata ───────────────────────────────────────────────────────────
+// ─── SEO Metadata ────────────────────────────────────────────────────────────
 export const metadata = {
-  // Unique title containing the primary target keyword
-  title: "Bad Habit Tracker & Addiction Recovery Analytics | HabitBack",
+  title: "Bad Habit Tracker & Addiction Recovery Analytics | HabitPilot",
 
-  // 155-character description packed with target keywords
   description:
-    "HabitBack is a free bad habit tracker and addiction recovery tracker. Track habit streaks, quit bad habits, log daily progress, and monitor your recovery with detailed analytics.",
+    "HabitPilot is a free bad habit tracker and addiction recovery tracker. Track habit streaks, quit bad habits, log daily progress, and monitor your recovery with detailed analytics.",
 
   keywords: [
     "bad habit tracker",
@@ -27,15 +25,15 @@ export const metadata = {
     "smoke-free streak",
     "daily habit log",
     "recovery dashboard",
+    "HabitPilot",
   ],
 
-  // Canonical URL — prevents duplicate content penalty
   alternates: {
     canonical: APP_URL,
   },
 
   openGraph: {
-    title: "Bad Habit Tracker & Addiction Recovery Analytics | HabitBack",
+    title: "Bad Habit Tracker & Addiction Recovery Analytics | HabitPilot",
     description:
       "Free bad habit tracker and addiction recovery dashboard. Monitor habit streaks, quit bad habits, and visualise your recovery progress daily.",
     type: "website",
@@ -45,47 +43,41 @@ export const metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "HabitBack Bad Habit Tracker — Recovery Analytics Dashboard",
+        alt: "HabitPilot — Bad Habit Tracker & Recovery Analytics Dashboard",
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "Bad Habit Tracker & Addiction Recovery Analytics | HabitBack",
+    title: "Bad Habit Tracker & Addiction Recovery Analytics | HabitPilot",
     description:
       "Free bad habit tracker. Track habit streaks, quit bad habits, and monitor your recovery.",
     images: ["/og-image.png"],
   },
 };
 
-// ─── JSON-LD Structured Data ────────────────────────────────────────────────
+// ─── JSON-LD Structured Data ─────────────────────────────────────────────────
 
-// 1. WebSite schema — enables Google Sitelinks Searchbox and name recognition
 const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   "@id": `${APP_URL}/#website`,
-  name: "HabitBack",
+  name: "HabitPilot",
   url: APP_URL,
-  description:
-    "A free bad habit tracker and addiction recovery analytics dashboard.",
+  description: "A free bad habit tracker and addiction recovery analytics dashboard.",
   potentialAction: {
     "@type": "SearchAction",
-    target: {
-      "@type": "EntryPoint",
-      urlTemplate: `${APP_URL}/login`,
-    },
+    target: { "@type": "EntryPoint", urlTemplate: `${APP_URL}/login` },
     "query-input": "required name=search_term_string",
   },
 };
 
-// 2. Organization schema — establishes brand identity in Google Knowledge Graph
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
   "@id": `${APP_URL}/#organization`,
-  name: "HabitBack",
+  name: "HabitPilot",
   url: APP_URL,
   logo: {
     "@type": "ImageObject",
@@ -94,23 +86,22 @@ const organizationSchema = {
     height: 630,
   },
   description:
-    "HabitBack helps people quit bad habits and track addiction recovery with daily habit logging, streak tracking, and recovery analytics.",
+    "HabitPilot helps people quit bad habits and track addiction recovery with daily habit logging, streak tracking, and recovery analytics.",
   foundingDate: "2024",
   sameAs: [],
 };
 
-// 3. SoftwareApplication schema — shows "Free", "Health", rating in search results
 const softwareSchema = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "@id": `${APP_URL}/#software`,
-  name: "HabitBack — Bad Habit Tracker",
+  name: "HabitPilot — Bad Habit Tracker",
   url: APP_URL,
   applicationCategory: "HealthApplication",
   applicationSubCategory: "Habit Tracker",
   operatingSystem: "Web, iOS, Android",
   description:
-    "A free bad habit tracker and addiction recovery analytics dashboard. Log daily habits, track habit streaks, quit bad habits, and monitor recovery progress with detailed charts.",
+    "A free bad habit tracker and addiction recovery analytics dashboard. Log daily habits, track habit streaks, quit bad habits, and monitor recovery progress.",
   offers: {
     "@type": "Offer",
     price: "0",
@@ -131,27 +122,20 @@ const softwareSchema = {
   creator: {
     "@type": "Organization",
     "@id": `${APP_URL}/#organization`,
-    name: "HabitBack",
+    name: "HabitPilot",
   },
 };
 
-// 4. BreadcrumbList schema — for the homepage (helps rich results)
 const breadcrumbSchema = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
   itemListElement: [
-    {
-      "@type": "ListItem",
-      position: 1,
-      name: "Home",
-      item: APP_URL,
-    },
+    { "@type": "ListItem", position: 1, name: "Home", item: APP_URL },
   ],
 };
 
 // ─── Page Data ───────────────────────────────────────────────────────────────
 
-// Feature copy uses target keywords naturally
 const FEATURES = [
   {
     icon: "📅",
@@ -197,46 +181,29 @@ const STATS = [
 export default function LandingPage() {
   return (
     <>
-      {/* Inject all 4 JSON-LD schemas */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
 
       <div className={styles.page}>
 
         {/* ── Nav ─────────────────────────────────────────────────── */}
         <header className={styles.nav}>
           <div className={styles.navInner}>
-            {/* Brand marked as link to homepage for internal linking */}
-            <Link href="/" className={styles.brand} aria-label="HabitBack — Home">
+            <Link href="/" className={styles.brand} aria-label="HabitPilot — Home">
               <span aria-hidden="true">🌿</span>
-              <span>HabitBack</span>
+              <span>HabitPilot</span>
             </Link>
             <nav aria-label="Site navigation" className={styles.navLinks}>
               <Link href="#features">Features</Link>
               <Link href="#how-it-works">How it works</Link>
-              <Link href="/login" className={styles.navCta}>
-                Sign In
-              </Link>
+              <Link href="/login" className={styles.navCta}>Sign In</Link>
             </nav>
           </div>
         </header>
 
         {/* ── Hero ────────────────────────────────────────────────── */}
-        {/* H1 contains the primary keyword "bad habit tracker" */}
         <section className={styles.hero} aria-labelledby="hero-heading">
           <div className={styles.heroGlow} aria-hidden="true" />
           <div className={styles.heroContent}>
@@ -244,28 +211,22 @@ export default function LandingPage() {
               <span aria-hidden="true">🌿</span> Free · No ads · Private
             </div>
 
-            {/* H1 — one per page, contains top keyword */}
             <h1 id="hero-heading" className={styles.heroTitle}>
               The Free Bad Habit<br />
               <span className={styles.heroGradient}>Tracker & Recovery App</span>
             </h1>
 
             <p className={styles.heroSub}>
-              HabitBack is a personal addiction recovery tracker that helps you
+              HabitPilot is a personal addiction recovery tracker that helps you
               quit bad habits — one day at a time. Log habits daily, watch your
               habit streak grow, and celebrate every milestone on your journey.
             </p>
             <div className={styles.heroCtas}>
-              <Link href="/login" className={styles.ctaPrimary}>
-                Start Tracking Free
-              </Link>
-              <a href="#features" className={styles.ctaSecondary}>
-                See Features
-              </a>
+              <Link href="/login" className={styles.ctaPrimary}>Start Tracking Free</Link>
+              <a href="#features" className={styles.ctaSecondary}>See Features</a>
             </div>
           </div>
 
-          {/* Mini calendar preview — aria-hidden since it's decorative */}
           <div className={styles.heroVisual} aria-hidden="true">
             <div className={styles.calPreview}>
               <div className={styles.calHeader}>
@@ -276,10 +237,7 @@ export default function LandingPage() {
               </div>
               <div className={styles.calGrid}>
                 {CAL_DAYS.map((status, i) => (
-                  <div
-                    key={i}
-                    className={`${styles.calCell} ${styles[`cal_${status}`]}`}
-                  />
+                  <div key={i} className={`${styles.calCell} ${styles[`cal_${status}`]}`} />
                 ))}
               </div>
               <div className={styles.calLegend}>
@@ -292,7 +250,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Stats strip ─────────────────────────────────────────── */}
-        <section className={styles.statsStrip} aria-label="HabitBack highlights">
+        <section className={styles.statsStrip} aria-label="HabitPilot highlights">
           {STATS.map((s) => (
             <div key={s.label} className={styles.statItem}>
               <span className={styles.statValue}>{s.value}</span>
@@ -305,7 +263,6 @@ export default function LandingPage() {
         <section id="features" className={styles.features} aria-labelledby="features-heading">
           <div className={styles.sectionInner}>
             <div className={styles.sectionLabel}>Features</div>
-            {/* H2 — uses secondary keyword */}
             <h2 id="features-heading" className={styles.sectionTitle}>
               Everything you need to quit bad habits
             </h2>
@@ -313,7 +270,6 @@ export default function LandingPage() {
               Built for real addiction recovery — simple enough to use every day,
               detailed enough to actually understand your habit patterns.
             </p>
-
             <div className={styles.featureGrid}>
               {FEATURES.map((f) => (
                 <article key={f.title} className={styles.featureCard}>
@@ -333,7 +289,6 @@ export default function LandingPage() {
             <h2 id="how-heading" className={styles.sectionTitle}>
               Start tracking bad habits in 3 steps
             </h2>
-
             <ol className={styles.steps}>
               <li className={styles.step}>
                 <div className={styles.stepNum} aria-hidden="true">1</div>
@@ -353,7 +308,7 @@ export default function LandingPage() {
                 <div className={styles.stepNum} aria-hidden="true">3</div>
                 <div>
                   <h3>Watch your recovery unfold</h3>
-                  <p>Your habit tracker fills with green as habit-free days stack up. Recovery analytics update instantly — streaks, scores, money saved.</p>
+                  <p>Your HabitPilot tracker fills with green as habit-free days stack up. Recovery analytics update instantly — streaks, scores, money saved.</p>
                 </div>
               </li>
             </ol>
@@ -364,7 +319,7 @@ export default function LandingPage() {
         <section className={styles.ctaBanner} aria-labelledby="cta-heading">
           <div className={styles.ctaBannerGlow} aria-hidden="true" />
           <h2 id="cta-heading">Ready to quit your bad habits?</h2>
-          <p>Join HabitBack — the free addiction recovery tracker. Always free.</p>
+          <p>Join HabitPilot — the free addiction recovery tracker. Always free.</p>
           <Link href="/login" className={styles.ctaBannerBtn}>
             Start Your Recovery Today
           </Link>
@@ -374,12 +329,11 @@ export default function LandingPage() {
         <footer className={styles.footer}>
           <div className={styles.footerInner}>
             <div className={styles.footerBrand}>
-              <span aria-hidden="true">🌿</span> HabitBack
+              <span aria-hidden="true">🌿</span> HabitPilot
             </div>
             <p className={styles.footerTag}>
               The free bad habit tracker. Track your recovery, one day at a time.
             </p>
-            {/* Internal links — help Google understand site structure */}
             <nav aria-label="Footer navigation" className={styles.footerLinks}>
               <Link href="/">Home</Link>
               <Link href="#features">Features</Link>
@@ -388,7 +342,7 @@ export default function LandingPage() {
               <Link href="/login">Register Free</Link>
             </nav>
             <p className={styles.footerCopy}>
-              © {new Date().getFullYear()} HabitBack. Free bad habit tracker. All rights reserved.
+              © {new Date().getFullYear()} HabitPilot. Free bad habit tracker. All rights reserved.
             </p>
           </div>
         </footer>
@@ -398,7 +352,6 @@ export default function LandingPage() {
   );
 }
 
-// Sample calendar data for the visual preview
 const CAL_DAYS = [
   "empty","green","green","green","red","yellow","yellow",
   "yellow","green","green","green","green","green","red",

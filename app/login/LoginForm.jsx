@@ -50,9 +50,9 @@ export default function LoginForm() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebPage",
-            name: "HabitBack Sign In",
-            description: "Sign in to your HabitBack smoking recovery dashboard.",
-            url: `${process.env.NEXT_PUBLIC_APP_URL || "https://habitback.app"}/login`,
+            name: "HabitPilot Sign In",
+            description: "Sign in to your HabitPilot habit tracker and recovery dashboard.",
+            url: `${process.env.NEXT_PUBLIC_APP_URL || "https://habitpilot.vercel.app"}/login`,
           }),
         }}
       />
@@ -62,7 +62,7 @@ export default function LoginForm() {
         {/* Brand */}
         <div className={styles.brand}>
           <span className={styles.brandIcon} aria-hidden="true">🌿</span>
-          <h1>HabitBack</h1>
+          <h1>HabitPilot</h1>
           <p>Track your recovery, one day at a time</p>
         </div>
 
