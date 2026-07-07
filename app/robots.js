@@ -1,7 +1,8 @@
 // app/robots.js
-// Disallow the dashboard (auth-gated) and any API routes from indexing.
+// Controls which pages crawlers index.
+// /dashboard is auth-gated — crawlers see a redirect to /login, not content.
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://habitback.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hb-analysis-frontend.vercel.app";
 
 export default function robots() {
   return {
@@ -9,9 +10,10 @@ export default function robots() {
       {
         userAgent: "*",
         allow: ["/", "/login"],
-        disallow: ["/dashboard/", "/api/", "/_next/"],
+        disallow: ["/dashboard/", "/api/", "/_next/", "/dashboard"],
       },
     ],
     sitemap: `${APP_URL}/sitemap.xml`,
+    host: APP_URL,
   };
 }

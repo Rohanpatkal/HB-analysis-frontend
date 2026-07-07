@@ -1,5 +1,6 @@
 // app/sitemap.js
-// Public pages only — /dashboard is auth-gated so excluded.
+// Submitted to Google Search Console.
+// Only public indexable pages — /dashboard is auth-gated so excluded.
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://hb-analysis-frontend.vercel.app";
 
@@ -8,14 +9,14 @@ export default function sitemap() {
     {
       url: APP_URL,
       lastModified: new Date(),
-      changeFrequency: "monthly",
+      changeFrequency: "weekly",  // Landing page content changes periodically
       priority: 1.0,
     },
     {
       url: `${APP_URL}/login`,
       lastModified: new Date(),
       changeFrequency: "yearly",
-      priority: 0.8,
+      priority: 0.7,
     },
   ];
 }
