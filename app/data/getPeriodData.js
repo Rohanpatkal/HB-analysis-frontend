@@ -167,18 +167,53 @@ function resolveMonth(raw, month, year) {
 // Data shaping — one function per component
 // ---------------------------------------------------------------------------
 
-function buildSummary(stats, totalCount) {
-  const { currentStreak, longestStreak, smokeFreeDays, reducedDays, smokingDays, moneySaved, recoveryScore } = stats;
-  return [
-    { title: "Current Streak",  value: `${currentStreak} Days`, icon: "🔥", color: "#22c55e" },
-    { title: "Longest Streak",  value: `${longestStreak} Days`, icon: "🏆", color: "#f59e0b" },
-    { title: "Smoke-Free Days", value: `${smokeFreeDays}`,      icon: "🚭", color: "#2563eb" },
-    { title: "Reduced Days",    value: `${reducedDays}`,        icon: "🟡", color: "#fbbf24" },
-    { title: "Smoking Days",    value: `${smokingDays}`,        icon: "🚬", color: "#ef4444" },
-    { title: "Total Count",     value: `${totalCount}`,         icon: "📊", color: "#0ea5e9" },
-    { title: "Money Saved",     value: formatINR(moneySaved),   icon: "💰", color: "#10b981" },
-    { title: "Recovery Score",  value: `${recoveryScore}%`,     icon: "❤️", color: "#ec4899" },
-  ];
+function buildMonthSummary(stats, totalCount, dayCounts, daysInMonth) {
+  const {
+    currentStreak, longestStreak, smokeFreeDays,
+    reducedDays, smokingDays, moneySaved, recoveryScore,
+  } = stats;
+
+  // Aggregate breakCount total and find peak (worst) day from dayCounts
+  let totalBreaks   = 0;
+  let peakCount     = 0;
+  let peakDate      = null;
+  let daysLogged    = 0;
+
+  for (const [iso, d] of Object.entries(dayCounts)) {
+    const c  = Number(d.count)      || 0;
+    const bc = Number(d.breakCount) || 0;
+    totalBreaks += bc;
+    if (c > 0) daysLogged++;
+    if (c > peakCount) { peakCount = c; peakDate = iso; }
+  }
+
+  const avgPerSmokingDay = smokingDays > 0
+    ? Math.round(totalCount / smokingDays)
+    : 0;
+
+  // Format peakDate "YYYY-MM-DD" → "12 Jul"
+  let peakLabel = "—";
+  if (peakDate) {
+    const [y, m, d] = peakDate.split("-").map(Number);
+    peakLabel = new Date(y, m - 1, d).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  }
+
+  return {
+    recoveryScore,
+    recoveryImprovement: null, // filled in getPeriodData
+    currentStreak,
+    longestStreak,
+    smokeFreeDays,
+    smokingDays,
+    reducedDays,
+    totalCount,
+    totalBreaks,
+    moneySaved,
+    avgPerSmokingDay,
+    peakDay:    { label: peakLabel, count: peakCount },
+    daysLogged,
+    daysInMonth,
+  };
 }
 
 function buildHighlights(stats) {
@@ -224,6 +259,10 @@ export function getPeriodData(month, year, raw = null) {
   ).recoveryScore;
   const recoveryImprovement = stats.recoveryScore - prevRecovery;
 
+  // Build the rich month summary object
+  const monthSummary = buildMonthSummary(stats, totalCount, dayCounts, daysInMonth);
+  monthSummary.recoveryImprovement = recoveryImprovement;
+
   return {
     period: { month, year, monthName: `${MONTHS[month]} ${year}` },
 
@@ -231,8 +270,8 @@ export function getPeriodData(month, year, raw = null) {
     calendar,
     dayCounts,
 
-    // MonthSummary
-    summary: buildSummary(stats, totalCount),
+    // MonthSummary — rich object consumed by the redesigned component
+    summary: monthSummary,
 
     // RecoveryHighlights
     highlights: buildHighlights(stats),
