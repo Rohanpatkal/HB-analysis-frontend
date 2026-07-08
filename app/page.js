@@ -59,6 +59,9 @@ export const metadata = {
 
 // ─── JSON-LD Structured Data ─────────────────────────────────────────────────
 
+console.log("aksdfjasdfk");
+
+
 const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
