@@ -73,13 +73,16 @@ export function DashboardProvider({ children, fetcher, userId }) {
   // Global summary directly from the backend /summary endpoint.
   const globalSummary = useMemo(() => raw?.summary ?? null, [raw]);
 
+  // Gap stats from backend /gaps endpoint.
+  const gapStats = useMemo(() => raw?.gapStats ?? null, [raw]);
+
   const selectPeriod = useCallback(({ month, year }) => {
     setPeriod({ month, year });
   }, []);
 
   const value = useMemo(
-    () => ({ period, selectPeriod, data, yearData, globalSummary, loading, error, refresh: load }),
-    [period, selectPeriod, data, yearData, globalSummary, loading, error, load]
+    () => ({ period, selectPeriod, data, yearData, globalSummary, gapStats, loading, error, refresh: load }),
+    [period, selectPeriod, data, yearData, globalSummary, gapStats, loading, error, load]
   );
 
   return (

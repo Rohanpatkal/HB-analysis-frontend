@@ -106,3 +106,54 @@ export function analyze(statuses, daysInMonth) {
     recoveryScore,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Gap Stats — frequency distribution of smoke-free run lengths
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute gap frequency distribution from a day-status array.
+ *
+ * @param {string[]} statuses   - Array of "green" | "yellow" | "red" | "future"
+ * @param {boolean}  includeYellow - When true, yellow days continue a gap (don't break it)
+ * @returns {{ average: number, top5: Array<{ gap: number, count: number }> }}
+ *   top5 sorted by occurrence COUNT descending; tiebreak: longer gap first
+ */
+export function computeGapStats(statuses, includeYellow = false) {
+  const past = statuses.filter((s) => s !== "future");
+
+  // Build runs of consecutive "safe" days
+  const runs = [];
+  let current = 0;
+
+  for (const s of past) {
+    const isSafe = s === "green" || (includeYellow && s === "yellow");
+    if (isSafe) {
+      current++;
+    } else if (current > 0) {
+      runs.push(current);
+      current = 0;
+    }
+  }
+  if (current > 0) runs.push(current);
+
+  if (!runs.length) return { average: 0, top5: [] };
+
+  // Frequency map
+  const freq = {};
+  for (const r of runs) {
+    freq[r] = (freq[r] || 0) + 1;
+  }
+
+  // Average gap length
+  const average =
+    Math.round((runs.reduce((a, b) => a + b, 0) / runs.length) * 10) / 10;
+
+  // Sort by count DESC, tiebreak by gap length DESC → top 5
+  const top5 = Object.entries(freq)
+    .map(([gap, count]) => ({ gap: Number(gap), count }))
+    .sort((a, b) => b.count - a.count || b.gap - a.gap)
+    .slice(0, 5);
+
+  return { average, top5 };
+}
