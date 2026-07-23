@@ -74,6 +74,8 @@ export function DashboardProvider({ children, fetcher, userId }) {
   const globalSummary = useMemo(() => raw?.summary ?? null, [raw]);
 
   // Gap stats from backend /gaps endpoint.
+  // A "gap" = consecutive days with count === 0 between two smoking days.
+  // No yellow/affected-day logic — pure raw count data.
   const gapStats = useMemo(() => raw?.gapStats ?? null, [raw]);
 
   const selectPeriod = useCallback(({ month, year }) => {

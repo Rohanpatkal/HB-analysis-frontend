@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import styles from "./Details.module.css";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useDashboard } from "../../context/DashboardProvider";
-import { formatINR, computeGapStats } from "../../utils/analytics.common";
+import { formatINR } from "../../utils/analytics.common";
 
+// ── Trend badge ───────────────────────────────────────────────────────────────
 function TrendBadge({ delta, unit = "%" }) {
   if (delta > 0) return <span className={`${styles.badge} ${styles.up}`}><TrendingUp size={15} /> +{delta}{unit} vs prev</span>;
   if (delta < 0) return <span className={`${styles.badge} ${styles.down}`}><TrendingDown size={15} /> {delta}{unit} vs prev</span>;
   return <span className={`${styles.badge} ${styles.flat}`}><Minus size={15} /> no change</span>;
 }
 
+// ── Stat tile ─────────────────────────────────────────────────────────────────
 function Tile({ color, label, value, sub }) {
   return (
     <div className={styles.tile}>
@@ -29,32 +31,46 @@ function formatMonthKey(key) {
   return `${months[parseInt(mm, 10) - 1] ?? mm} ${yyyy}`;
 }
 
+// ── Rank constants ────────────────────────────────────────────────────────────
 const RANK_CLASSES = [styles.rank1, styles.rank2, styles.rank3, styles.rank4, styles.rank5];
-const RANK_LABELS  = ["1st", "2nd", "3rd", "4th", "5th"];
+const RANK_MEDALS  = ["🥇", "🥈", "🥉", "4th", "5th"];
 
+// ── Gap rows ──────────────────────────────────────────────────────────────────
+// Pure count-based gaps: a gap = consecutive days with count === 0.
+// No yellow/affected-day logic. Ranked highest occurrence count → lowest.
 function GapRows({ gapResult, emptyLabel }) {
-  if (!gapResult || gapResult.top5.length === 0) {
+  if (!gapResult || !gapResult.top5 || gapResult.top5.length === 0) {
     return <p className={styles.gapEmpty}>{emptyLabel ?? "No gap data available"}</p>;
   }
   const { average, top5 } = gapResult;
-  const maxC = Math.max(...top5.map((g) => g.count));
+  const maxC = top5[0].count; // rank-1 always has the highest count
+
   return (
     <>
       <div className={styles.gapAverage}>
         <span className={styles.gapAverageValue}>{average}</span>
-        <span className={styles.gapAverageLabel}>days average gap length</span>
+        <span className={styles.gapAverageLabel}>days — average gap length</span>
       </div>
       <div className={styles.gapRows}>
         {top5.map((item, i) => (
           <div className={styles.gapRow} key={item.gap}>
-            <span className={`${styles.gapRank} ${RANK_CLASSES[i]}`}>{RANK_LABELS[i]}</span>
+            <span className={`${styles.gapRank} ${RANK_CLASSES[i]}`} title={`Rank ${i + 1}`}>
+              {RANK_MEDALS[i]}
+            </span>
             <div className={styles.gapBarWrap}>
               <div className={styles.gapBarMeta}>
-                <span>{item.gap} day{item.gap !== 1 ? "s" : ""} gap</span>
-                <span>{item.count}x</span>
+                <span className={styles.gapBarLabel}>
+                  {item.gap} day{item.gap !== 1 ? "s" : ""} gap
+                </span>
+                <span className={styles.gapBarCount}>
+                  {item.count} time{item.count !== 1 ? "s" : ""}
+                </span>
               </div>
               <div className={styles.gapBarOuter}>
-                <div className={styles.gapBarInner} style={{ width: `${(item.count / maxC) * 100}%` }} />
+                <div
+                  className={styles.gapBarInner}
+                  style={{ width: `${(item.count / maxC) * 100}%` }}
+                />
               </div>
             </div>
           </div>
@@ -64,35 +80,26 @@ function GapRows({ gapResult, emptyLabel }) {
   );
 }
 
+// ── Main component ────────────────────────────────────────────────────────────
 export default function Details() {
-  const { data, yearData, period, globalSummary } = useDashboard();
+  const { data, yearData, period, globalSummary, gapStats } = useDashboard();
   const d = data.details;
-  const [includeYellow, setIncludeYellow] = useState(false);
-
-  const allStatuses = useMemo(() => {
-    const cal = data.calendar ?? {};
-    return Object.keys(cal).sort().map((k) => cal[k]);
-  }, [data.calendar]);
-
-  const yearStatuses = useMemo(() => {
-    const cal = data.calendar ?? {};
-    const yearStr = String(period.year);
-    return Object.keys(cal).filter((k) => k.startsWith(yearStr)).sort().map((k) => cal[k]);
-  }, [data.calendar, period.year]);
-
-  const liveGlobalGaps = useMemo(() => computeGapStats(allStatuses, includeYellow), [allStatuses, includeYellow]);
-  const liveYearGaps   = useMemo(() => computeGapStats(yearStatuses, includeYellow), [yearStatuses, includeYellow]);
 
   const maxSmokeFree = Math.max(...yearData.months.map((m) => m.smokeFreeDays), 1);
+
+  // Get per-year gap result from backend data
+  const yearGapResult  = gapStats?.yearlyGaps?.[String(period.year)] ?? null;
+  const globalGapResult = gapStats?.globalGaps ?? null;
 
   return (
     <div className={styles.wrapper} aria-label="Detailed analytics">
 
+      {/* ── All-Time Summary ─────────────────────────────────────────────────── */}
       {globalSummary && (
         <section className={styles.panel} aria-labelledby="global-summary-heading">
           <div className={styles.panelHead}>
             <div>
-              <h2 id="global-summary-heading" className={styles.panelTitle}>All-Time Summary</h2>
+              <h2 id="global-summary-heading" className={styles.panelTitle}>🌍 All-Time Summary</h2>
               <p>Across all {globalSummary.totalYears} year{globalSummary.totalYears !== 1 ? "s" : ""} of data</p>
             </div>
             <span className={`${styles.badge} ${styles.flat}`}>{globalSummary.totalMonths} months logged</span>
@@ -107,6 +114,7 @@ export default function Details() {
         </section>
       )}
 
+      {/* ── Monthly Details ───────────────────────────────────────────────────── */}
       <section className={styles.panel} aria-labelledby="monthly-details-heading">
         <div className={styles.panelHead}>
           <div><h2 id="monthly-details-heading" className={styles.panelTitle}>Monthly Details</h2><p>{data.period.monthName}</p></div>
@@ -124,6 +132,7 @@ export default function Details() {
         </div>
       </section>
 
+      {/* ── Yearly Details ────────────────────────────────────────────────────── */}
       <section className={styles.panel} aria-labelledby="yearly-details-heading">
         <div className={styles.panelHead}>
           <div><h2 id="yearly-details-heading" className={styles.panelTitle}>Yearly Details</h2><p>Overview for {period.year}</p></div>
@@ -153,44 +162,45 @@ export default function Details() {
         </div>
       </section>
 
+      {/* ── Gap Analysis ─────────────────────────────────────────────────────── */}
+      {/* A gap = consecutive days with count=0 between two smoking days.         */}
+      {/* No yellow/affected logic — pure raw count data from backend.            */}
       <section className={styles.panel} aria-labelledby="gap-analysis-heading">
         <div className={styles.panelHead}>
           <div>
-            <h2 id="gap-analysis-heading" className={styles.panelTitle}>Gap Analysis</h2>
-            <p>Distribution of smoke-free streaks — top 5 by frequency</p>
+            <h2 id="gap-analysis-heading" className={styles.panelTitle}>📊 Gap Analysis</h2>
+            <p>Days between cigarettes — top 5 streak lengths by frequency</p>
           </div>
+          <span className={`${styles.badge} ${styles.flat}`}>
+            highest count → 1st
+          </span>
         </div>
 
-        <div className={styles.toggleRow} role="group" aria-labelledby="yellow-toggle-label">
-          <div className={styles.toggleLabel}>
-            <span id="yellow-toggle-label" className={styles.toggleLabelTitle}>Include Yellow Days in Gaps</span>
-            <span className={styles.toggleLabelSub}>
-              {includeYellow
-                ? "Yellow (affected) days are counted as part of a gap"
-                : "Only green (smoke-free) days form a gap — yellow breaks it"}
-            </span>
+        {/* ── Per-year top 5 ──────────────────────────────────────────────── */}
+        <div>
+          <div className={styles.gapSectionTitle}>
+            📅 {period.year}
+            <span className={styles.gapSectionSub}>ranked by occurrence count</span>
           </div>
-          <label className={styles.toggleSwitch} aria-label="Toggle yellow days in gap calculation">
-            <input id="yellow-toggle-input" type="checkbox" checked={includeYellow} onChange={(e) => setIncludeYellow(e.target.checked)} />
-            <span className={styles.toggleSlider} />
-          </label>
+          <GapRows
+            gapResult={yearGapResult}
+            emptyLabel={`No gap data for ${period.year}`}
+          />
         </div>
 
-        <div style={{ marginTop: "22px" }}>
-          <div style={{ marginBottom: "10px", fontWeight: 700, color: "#334155", fontSize: "0.88rem" }}>
-            {period.year} — Top Gap Frequencies
+        {/* ── All-time global top 5 ────────────────────────────────────────── */}
+        <div style={{ marginTop: "28px", borderTop: "1px solid #e2e8f0", paddingTop: "24px" }}>
+          <div className={styles.gapSectionTitle}>
+            🌍 All Time
+            <span className={styles.gapSectionSub}>ranked by occurrence count</span>
           </div>
-          <GapRows gapResult={liveYearGaps} emptyLabel={`No gap data for ${period.year}`} />
+          <GapRows
+            gapResult={globalGapResult}
+            emptyLabel="No global gap data available"
+          />
         </div>
 
-        <div style={{ marginTop: "28px", borderTop: "1px solid #e2e8f0", paddingTop: "22px" }}>
-          <div style={{ marginBottom: "10px", fontWeight: 700, color: "#334155", fontSize: "0.88rem" }}>
-            All Time — Top Gap Frequencies
-          </div>
-          <GapRows gapResult={liveGlobalGaps} emptyLabel="No global gap data available" />
-        </div>
       </section>
-
     </div>
   );
 }

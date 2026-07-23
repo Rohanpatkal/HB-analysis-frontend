@@ -334,3 +334,37 @@ export function getYearData(year, raw = null) {
     improvement:       secondHalf - firstHalf,
   };
 }
+
+// ---------------------------------------------------------------------------
+// buildAllStatuses — full chronological status array across all years/months
+// ---------------------------------------------------------------------------
+//
+// Used by the Gap Analysis panel to compute gap frequencies across ALL data,
+// not just the currently-selected month.
+//
+// @param raw       - the full raw analytics payload from api-client.js
+// @param filterYear - optional string, e.g. "2024"; if set, only that year's
+//                    months are included (for the per-year gap panel)
+// @returns string[] — ordered array of "green" | "yellow" | "red" | "future"
+//
+export function buildAllStatuses(raw, filterYear = null) {
+  if (!raw?.data) return [];
+
+  const years = Object.keys(raw.data).sort();
+  const result = [];
+
+  for (const yearStr of years) {
+    if (filterYear && yearStr !== String(filterYear)) continue;
+
+    // Iterate months 0–11 in order so status array is chronological
+    for (let m = 0; m < 12; m++) {
+      const { statuses } = buildMonthFromApi(raw, m, Number(yearStr));
+      // Only include months that actually have any non-future data
+      if (statuses.some((s) => s !== "future")) {
+        result.push(...statuses);
+      }
+    }
+  }
+
+  return result;
+}
