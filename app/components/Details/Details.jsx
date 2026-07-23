@@ -63,7 +63,7 @@ function GapRows({ gapResult, emptyLabel }) {
                   {item.gap} day{item.gap !== 1 ? "s" : ""} gap
                 </span>
                 <span className={styles.gapBarCount}>
-                  {item.count} time{item.count !== 1 ? "s" : ""}
+                  {item.count}
                 </span>
               </div>
               <div className={styles.gapBarOuter}>
