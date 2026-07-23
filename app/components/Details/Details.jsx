@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import styles from "./Details.module.css";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useDashboard } from "../../context/DashboardProvider";
@@ -31,52 +30,82 @@ function formatMonthKey(key) {
   return `${months[parseInt(mm, 10) - 1] ?? mm} ${yyyy}`;
 }
 
-// ── Rank constants ────────────────────────────────────────────────────────────
-const RANK_CLASSES = [styles.rank1, styles.rank2, styles.rank3, styles.rank4, styles.rank5];
-const RANK_MEDALS  = ["🥇", "🥈", "🥉", "4th", "5th"];
+// ── Gap leaderboard ───────────────────────────────────────────────────────────
+// Ranks gap lengths by how often they occurred (highest count = Rank 1)
+const RANK_CONFIG = [
+  { medal: "🥇", bg: "linear-gradient(135deg,#fef9c3,#fde68a)", border: "#fcd34d", countBg: "#f59e0b", countColor: "#fff" },
+  { medal: "🥈", bg: "linear-gradient(135deg,#f1f5f9,#e2e8f0)", border: "#cbd5e1", countBg: "#64748b", countColor: "#fff" },
+  { medal: "🥉", bg: "linear-gradient(135deg,#fef3c7,#fde68a)", border: "#fcd34d", countBg: "#d97706", countColor: "#fff" },
+  { medal: "4",  bg: "linear-gradient(135deg,#f0fdf4,#dcfce7)", border: "#bbf7d0", countBg: "#22c55e", countColor: "#fff" },
+  { medal: "5",  bg: "linear-gradient(135deg,#eff6ff,#dbeafe)", border: "#bfdbfe", countBg: "#3b82f6", countColor: "#fff" },
+];
 
-// ── Gap rows ──────────────────────────────────────────────────────────────────
-// Pure count-based gaps: a gap = consecutive days with count === 0.
-// No yellow/affected-day logic. Ranked highest occurrence count → lowest.
-function GapRows({ gapResult, emptyLabel }) {
+function GapLeaderboard({ gapResult, emptyLabel }) {
   if (!gapResult || !gapResult.top5 || gapResult.top5.length === 0) {
-    return <p className={styles.gapEmpty}>{emptyLabel ?? "No gap data available"}</p>;
+    return (
+      <div className={styles.gapEmpty}>
+        <span className={styles.gapEmptyIcon}>📭</span>
+        <span>{emptyLabel ?? "No gap data available"}</span>
+      </div>
+    );
   }
+
   const { average, top5 } = gapResult;
-  const maxC = top5[0].count; // rank-1 always has the highest count
+  const maxCount = top5[0].count; // rank 1 always has highest count
 
   return (
-    <>
-      <div className={styles.gapAverage}>
-        <span className={styles.gapAverageValue}>{average}</span>
-        <span className={styles.gapAverageLabel}>days — average gap length</span>
+    <div className={styles.gapLeaderboard}>
+      {/* Average pill */}
+      <div className={styles.gapAveragePill}>
+        <span className={styles.gapAvgNum}>{average}</span>
+        <span className={styles.gapAvgLabel}>days avg gap</span>
       </div>
-      <div className={styles.gapRows}>
-        {top5.map((item, i) => (
-          <div className={styles.gapRow} key={item.gap}>
-            <span className={`${styles.gapRank} ${RANK_CLASSES[i]}`} title={`Rank ${i + 1}`}>
-              {RANK_MEDALS[i]}
-            </span>
-            <div className={styles.gapBarWrap}>
-              <div className={styles.gapBarMeta}>
-                <span className={styles.gapBarLabel}>
-                  {item.gap} day{item.gap !== 1 ? "s" : ""} gap
-                </span>
-                <span className={styles.gapBarCount}>
-                  {item.count}
-                </span>
+
+      {/* Rank cards */}
+      <div className={styles.gapCards}>
+        {top5.map((item, i) => {
+          const cfg = RANK_CONFIG[i];
+          const pct = Math.round((item.count / maxCount) * 100);
+          return (
+            <div
+              key={item.gap}
+              className={styles.gapCard}
+              style={{ background: cfg.bg, borderColor: cfg.border }}
+            >
+              {/* Medal */}
+              <div className={styles.gapCardMedal}>{cfg.medal}</div>
+
+              {/* Gap length — main info */}
+              <div className={styles.gapCardCenter}>
+                <span className={styles.gapCardDays}>{item.gap}</span>
+                <span className={styles.gapCardDaysLabel}>day{item.gap !== 1 ? "s" : ""}</span>
               </div>
-              <div className={styles.gapBarOuter}>
+
+              {/* Count badge — prominently displayed */}
+              <div
+                className={styles.gapCardCount}
+                style={{ background: cfg.countBg, color: cfg.countColor }}
+                title={`Occurred ${item.count} time${item.count !== 1 ? "s" : ""}`}
+              >
+                {item.count}
+              </div>
+
+              {/* Progress bar showing relative frequency */}
+              <div className={styles.gapCardBar}>
                 <div
-                  className={styles.gapBarInner}
-                  style={{ width: `${(item.count / maxC) * 100}%` }}
+                  className={styles.gapCardBarFill}
+                  style={{
+                    width: `${pct}%`,
+                    background: cfg.countBg,
+                    opacity: 0.4,
+                  }}
                 />
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -87,8 +116,7 @@ export default function Details() {
 
   const maxSmokeFree = Math.max(...yearData.months.map((m) => m.smokeFreeDays), 1);
 
-  // Get per-year gap result from backend data
-  const yearGapResult  = gapStats?.yearlyGaps?.[String(period.year)] ?? null;
+  const yearGapResult   = gapStats?.yearlyGaps?.[String(period.year)] ?? null;
   const globalGapResult = gapStats?.globalGaps ?? null;
 
   return (
@@ -163,43 +191,37 @@ export default function Details() {
       </section>
 
       {/* ── Gap Analysis ─────────────────────────────────────────────────────── */}
-      {/* A gap = consecutive days with count=0 between two smoking days.         */}
-      {/* No yellow/affected logic — pure raw count data from backend.            */}
       <section className={styles.panel} aria-labelledby="gap-analysis-heading">
         <div className={styles.panelHead}>
           <div>
             <h2 id="gap-analysis-heading" className={styles.panelTitle}>📊 Gap Analysis</h2>
-            <p>Days between cigarettes — top 5 streak lengths by frequency</p>
+            <p>Days between cigarettes — ranked by how often each gap length occurred</p>
           </div>
-          <span className={`${styles.badge} ${styles.flat}`}>
-            highest count → 1st
-          </span>
         </div>
 
-        {/* ── Per-year top 5 ──────────────────────────────────────────────── */}
-        <div>
+        {/* ── Per-year ──────────────────────────────────────────────────────── */}
+        <div className={styles.gapSection}>
           <div className={styles.gapSectionTitle}>
             📅 {period.year}
-            <span className={styles.gapSectionSub}>ranked by occurrence count</span>
+            <span className={styles.gapSectionSub}>highest count = Rank 1</span>
           </div>
-          <GapRows
+          <GapLeaderboard
             gapResult={yearGapResult}
             emptyLabel={`No gap data for ${period.year}`}
           />
         </div>
 
-        {/* ── All-time global top 5 ────────────────────────────────────────── */}
-        <div style={{ marginTop: "28px", borderTop: "1px solid #e2e8f0", paddingTop: "24px" }}>
+        {/* ── All-time ──────────────────────────────────────────────────────── */}
+        <div className={styles.gapSection} style={{ borderTop: "1px solid #e2e8f0", paddingTop: "24px" }}>
           <div className={styles.gapSectionTitle}>
             🌍 All Time
-            <span className={styles.gapSectionSub}>ranked by occurrence count</span>
+            <span className={styles.gapSectionSub}>highest count = Rank 1</span>
           </div>
-          <GapRows
+          <GapLeaderboard
             gapResult={globalGapResult}
             emptyLabel="No global gap data available"
           />
         </div>
-
       </section>
     </div>
   );
